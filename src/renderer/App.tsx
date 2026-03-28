@@ -858,12 +858,10 @@ export default function App() {
     <div style={{ minHeight: '100vh', maxHeight: '100vh', overflow: 'auto', background: 'linear-gradient(135deg, #003144 0%, #021c28 100%)', color: '#fff', fontFamily: "'Golos Text', sans-serif", padding: '20px', paddingBottom: '120px' }}>
       {msg && <div style={{ position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.8)', padding: '12px 24px', borderRadius: 30, fontSize: 14, zIndex: 9999, border: '1px solid rgba(61,219,127,0.3)' }}>{msg}</div>}
 
-      <button onClick={() => setShowLogs(!showLogs)} style={{ position: 'fixed', top: 10, right: 10, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, color: '#fff', padding: '8px 12px', fontSize: 12, cursor: 'pointer', zIndex: 1000 }}>
-        📋 Лог {logs.length}
-      </button>
+
 
       {showLogs && (
-        <div style={{ position: 'fixed', top: 50, right: 10, width: 320, maxHeight: '70vh', background: '#021c28', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, padding: 12, zIndex: 999, overflow: 'auto' }}>
+        <div style={{ position: 'fixed', bottom: 70, left: '50%', transform: 'translateX(-50%)', width: '90%', maxWidth: 400, maxHeight: '50vh', background: '#021c28', border: '1px solid rgba(61,219,127,0.3)', borderRadius: 12, padding: 12, zIndex: 999, overflow: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <span style={{ fontWeight: 600, fontSize: 13 }}>📋 Лог событий</span>
             <button onClick={exportLogs} style={{ background: '#3ddb7f', border: 'none', borderRadius: 6, color: '#000', padding: '4px 10px', fontSize: 11, cursor: 'pointer' }}>Копировать</button>
@@ -880,10 +878,9 @@ export default function App() {
         </div>
       )}
 
-      <div style={{ textAlign: 'center', marginBottom: 20, position: 'relative' }}>
+      <div style={{ textAlign: 'center', marginBottom: 20 }}>
         <div style={{ width: 60, height: 60, background: '#fff', borderRadius: 14, margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 28 }}>🏢</span></div>
         <h1 style={{ fontFamily: "'Unbounded', sans-serif", fontSize: 20, fontWeight: 700 }}>NeuroOffice Builder</h1>
-        <button onClick={() => window.open('http://localhost:5173', '_blank')} style={{ position: 'absolute', top: 0, right: 0, padding: '6px 12px', background: 'rgba(61,219,127,0.2)', border: '1px solid rgba(61,219,127,0.4)', borderRadius: 8, color: '#3ddb7f', fontSize: 11, cursor: 'pointer' }}>🌐 Открыть</button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 16 }}>
@@ -1381,12 +1378,13 @@ export default function App() {
                       )}
                     </div>
                   ))}
-                </div>
-              </div>
-            )}
           </div>
-        </div>
+        )}
       )}
+
+      <button onClick={() => setShowLogs(!showLogs)} style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(61,219,127,0.4)', borderRadius: 20, color: '#3ddb7f', padding: '10px 20px', fontSize: 12, cursor: 'pointer', zIndex: 1000 }}>
+        📋 Лог ({logs.length})
+      </button>
     </div>
   )
 }

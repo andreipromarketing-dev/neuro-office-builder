@@ -171,7 +171,7 @@ MIT License
 
 **Танши (Vuntai)**
 - Email: fiolentashram@gmail.com
-- GitHub: [ваш-username]
+- GitHub: andreipromarketing-dev
 
 ---
 

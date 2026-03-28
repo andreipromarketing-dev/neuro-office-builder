@@ -879,7 +879,7 @@ export default function App() {
       )}
 
       <div style={{ textAlign: 'center', marginBottom: 20 }}>
-        <div style={{ width: 60, height: 60, background: '#fff', borderRadius: 14, margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 28 }}>🏢</span></div>
+        <img src="/logo.svg" alt="NeuroOffice" style={{ width: 60, height: 60, borderRadius: 14, margin: '0 auto 12px', display: 'block' }} />
         <h1 style={{ fontFamily: "'Unbounded', sans-serif", fontSize: 20, fontWeight: 700 }}>NeuroOffice Builder</h1>
       </div>
 

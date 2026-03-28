@@ -30,12 +30,17 @@ interface Role {
 }
 
 const LLM_TYPES = [
-  { value: 'openai', label: 'OpenAI (GPT-4o, GPT-5)' },
-  { value: 'anthropic', label: 'Anthropic Claude' },
-  { value: 'google', label: 'Google Gemini' },
+  { value: 'openai', label: 'OpenAI (GPT-5.4, GPT-5)' },
+  { value: 'anthropic', label: 'Anthropic Claude (Opus 4.6, Sonnet 4.6)' },
+  { value: 'google', label: 'Google Gemini (3.1 Pro, 2.5 Pro)' },
   { value: 'ollama', label: 'Ollama (локальный)' },
   { value: 'lmstudio', label: 'LM Studio (локальный)' },
   { value: 'aya', label: 'Cohere Aya Expanse' },
+  { value: 'deepseek', label: 'DeepSeek (V3.2, R1)' },
+  { value: 'llama', label: 'Meta Llama 4 Maverick' },
+  { value: 'mistral', label: 'Mistral' },
+  { value: 'grok', label: 'xAI Grok 4' },
+  { value: 'qwen', label: 'Qwen3-Max' },
   { value: 'custom', label: 'Свой API' },
 ]
 

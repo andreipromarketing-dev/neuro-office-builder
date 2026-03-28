@@ -491,14 +491,14 @@ app.post('/api/chat', async (req, res) => {
     
     if (llm.type === 'ollama') {
       response = await callOllama(llm.endpoint || 'http://localhost:11434', messages);
-    } else if (llm.type === 'lmstudio') {
+    } else if (llm.type === 'lmstudio' || llm.type === 'aya' || llm.type === 'llama' || llm.type === 'mistral' || llm.type === 'deepseek' || llm.type === 'qwen' || llm.type === 'grok') {
       response = await callLMStudio(llm.endpoint || 'http://localhost:1234', messages);
-    } else if (llm.type === 'aya') {
-      response = await callLMStudio(llm.endpoint || 'http://127.0.0.1:1234', messages);
     } else if (llm.type === 'openai') {
       response = await callOpenAI(llm.apiKey, messages, llm.endpoint);
     } else if (llm.type === 'anthropic') {
       response = await callAnthropic(llm.apiKey, messages);
+    } else if (llm.type === 'google') {
+      response = await callOpenAI(llm.apiKey, messages, llm.endpoint || 'https://generativelanguage.googleapis.com/v1');
     } else {
       // Fallback - LM Studio compatible
       response = await callLMStudio(llm.endpoint || 'http://localhost:1234', messages);

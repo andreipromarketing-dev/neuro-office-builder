@@ -30,7 +30,7 @@ interface Role {
 }
 
 const LLM_TYPES = [
-  { value: 'openai', label: 'OpenAI (GPT-4, GPT-4o)' },
+  { value: 'openai', label: 'OpenAI (GPT-4o, GPT-5)' },
   { value: 'anthropic', label: 'Anthropic Claude' },
   { value: 'google', label: 'Google Gemini' },
   { value: 'ollama', label: 'Ollama (локальный)' },

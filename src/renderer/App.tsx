@@ -1245,14 +1245,7 @@ export default function App() {
             {/* Telegram & Web UI buttons - hide when agent running */}
             {!agentReady && (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-                  <button onClick={() => setShowModal('telegram')} style={{ padding: 20, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 16, cursor: 'pointer', textAlign: 'center' }}>
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>📱</div><div style={{ fontWeight: 600 }}>Telegram</div><div style={{ fontSize: 10, opacity: 0.6, marginTop: 4 }}>Запустить бота</div>
-                  </button>
-                  <button onClick={() => setShowModal('web')} style={{ padding: 20, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 16, cursor: 'pointer', textAlign: 'center' }}>
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>🌐</div><div style={{ fontWeight: 600 }}>Web UI</div><div style={{ fontSize: 10, opacity: 0.6, marginTop: 4 }}>Открыть в браузере</div>
-                  </button>
-                </div>
+
 
                 <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 14, padding: 14, marginBottom: 16 }}>
                   <div style={{ fontWeight: 600, marginBottom: 12 }}>📊 Статус системы</div>
@@ -1281,8 +1274,8 @@ export default function App() {
         )}
       </div>
 
-      {/* Modal */}
-      {showModal && (
+      {/* Modal - disabled */}
+      {false && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <div style={{ background: '#021c28', borderRadius: 20, padding: 24, maxWidth: 500, width: '100%', maxHeight: '80vh', overflow: 'auto', border: '1px solid rgba(255,255,255,0.12)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -1380,7 +1373,7 @@ export default function App() {
                   ))}
           </div>
         )}
-      )}
+      </div>
 
       <button onClick={() => setShowLogs(!showLogs)} style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(61,219,127,0.4)', borderRadius: 20, color: '#3ddb7f', padding: '10px 20px', fontSize: 12, cursor: 'pointer', zIndex: 1000 }}>
         📋 Лог ({logs.length})

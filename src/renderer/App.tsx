@@ -29,6 +29,22 @@ interface Role {
   knowledgeBases: KnowledgeBase[]
 }
 
+interface Document {
+  id: string
+  name: string
+  type?: string
+  content?: string
+  filePath?: string
+  score?: number
+  snippet?: string
+  source?: string
+}
+
+interface LLMTypeOption {
+  value: string
+  label: string
+}
+
 const LLM_TYPES = [
   { value: 'openai', label: 'OpenAI (GPT-5.4, GPT-5)' },
   { value: 'anthropic', label: 'Anthropic Claude (Opus 4.6, Sonnet 4.6)' },
@@ -229,7 +245,7 @@ export default function App() {
   const [editingRole, setEditingRole] = useState<Role | null>(null)
   const [msg, setMsg] = useState('')
   const [showModal, setShowModal] = useState<string | null>(null)
-  const [aiThinking, setAiThinking] = useState<{role: string, status: string, input: string, output: string, documents?: any[]}[]>([])
+  const [aiThinking, setAiThinking] = useState<{role: string, status: string, input: string, output: string, documents?: Document[]}[]>([])
   const [error, setError] = useState<string | null>(null)
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [showLogs, setShowLogs] = useState(false)
@@ -620,7 +636,7 @@ export default function App() {
 
   const API_BASE = 'http://localhost:3001/api'
 
-  const callBackendChat = async (roleId: string, message: string): Promise<{response: string, documents: any[], llm: string, subRole?: string | null}> => {
+  const callBackendChat = async (roleId: string, message: string): Promise<{response: string, documents: Document[], llm: string, subRole?: string | null}> => {
     // Сначала получаем роли из бэкенда чтобы найти правильный ID
     try {
       const rolesRes = await fetch(`${API_BASE}/roles`)

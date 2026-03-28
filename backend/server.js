@@ -27,6 +27,7 @@ let conversationHistory = [];
 
 // ==================== ИСТОРИЯ ЧАТА С ДИСКОМ ====================
 const HISTORY_FILE = join(__dirname, 'data', 'conversation-history.json');
+let historySaveTimer = null;
 
 function loadHistory() {
   try {
@@ -41,13 +42,19 @@ function loadHistory() {
 }
 
 function saveHistory() {
-  try {
-    const dir = join(__dirname, 'data');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(HISTORY_FILE, JSON.stringify(conversationHistory, null, 2));
-  } catch (e) {
-    console.error('[ИСТОРИЯ] Ошибка сохранения:', e.message);
+  if (historySaveTimer) {
+    clearTimeout(historySaveTimer);
   }
+  historySaveTimer = setTimeout(() => {
+    try {
+      const dir = join(__dirname, 'data');
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(HISTORY_FILE, JSON.stringify(conversationHistory, null, 2));
+      console.log(`[ИСТОРИЯ] Сохранено ${conversationHistory.length} сообщений`);
+    } catch (e) {
+      console.error('[ИСТОРИЯ] Ошибка сохранения:', e.message);
+    }
+  }, 5000);
 }
 
 loadHistory();
@@ -577,8 +584,27 @@ app.post('/api/chat', async (req, res) => {
 
 // ==================== LLM АДАПТЕРЫ ====================
 
+// Таймаут для запросов (120 секунд)
+const LLM_TIMEOUT = 120 * 1000;
+
+async function fetchWithTimeout(url, options, timeout = LLM_TIMEOUT) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return response;
+  } catch (e) {
+    clearTimeout(id);
+    if (e.name === 'AbortError') {
+      throw new Error('Превышен таймаут ожидания ответа от LLM');
+    }
+    throw e;
+  }
+}
+
 async function callOllama(endpoint, messages) {
-  const response = await fetch(`${endpoint}/api/chat`, {
+  const response = await fetchWithTimeout(`${endpoint}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -597,7 +623,7 @@ async function callOllama(endpoint, messages) {
 }
 
 async function callLMStudio(endpoint, messages) {
-  const response = await fetch(`${endpoint}/v1/chat/completions`, {
+  const response = await fetchWithTimeout(`${endpoint}/v1/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -617,7 +643,7 @@ async function callLMStudio(endpoint, messages) {
 }
 
 async function callOpenAI(apiKey, messages, endpoint) {
-  const response = await fetch(endpoint || 'https://api.openai.com/v1/chat/completions', {
+  const response = await fetchWithTimeout(endpoint || 'https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 
       'Content-Type': 'application/json',
@@ -639,7 +665,7 @@ async function callOpenAI(apiKey, messages, endpoint) {
 }
 
 async function callAnthropic(apiKey, messages) {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 
       'Content-Type': 'application/json',

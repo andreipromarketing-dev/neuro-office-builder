@@ -1277,6 +1277,10 @@ export default function App() {
       <button onClick={() => setShowLogs(!showLogs)} style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(61,219,127,0.4)', borderRadius: 20, color: '#3ddb7f', padding: '10px 20px', fontSize: 12, cursor: 'pointer', zIndex: 1000 }}>
         📋 Лог ({logs.length})
       </button>
+
+      <div style={{ position: 'fixed', bottom: 8, right: 12, fontSize: 10, opacity: 0.4, color: '#fff' }}>
+        © <a href="https://югспецсети.рф" target="_blank" style={{ color: 'inherit', textDecoration: 'none' }}>югспецсети.рф</a>
+      </div>
     </div>
   )
 }

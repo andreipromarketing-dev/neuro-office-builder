@@ -1,0 +1,21 @@
+{
+  "name": "neuro-office-backend",
+  "version": "1.0.0",
+  "description": "NeuroOffice Backend - быстрый и эффективный бэкенд для AI агентов",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "fuse.js": "^7.0.0",
+    "uuid": "^9.0.1",
+    "dotenv": "^16.4.1",
+    "mammoth": "^1.6.0",
+    "pdf-parse": "^1.1.1",
+    "xlsx": "^0.18.5"
+  }
+}

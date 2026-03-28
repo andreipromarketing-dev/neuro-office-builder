@@ -1,0 +1,53 @@
+{
+  "name": "neuro-office-builder",
+  "version": "0.1.0",
+  "description": "Конструктор нейроофисов — создание и управление AI-агентами",
+  "main": "src/main/main.js",
+  "scripts": {
+    "dev": "vite",
+    "backend": "cd backend && npm start",
+    "start": "concurrently \"npm run dev\" \"npm run backend\"",
+    "build": "vite build && electron-builder",
+    "preview": "vite preview",
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:build": "vite build && electron-builder"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "neurooffice",
+    "llm"
+  ],
+  "author": "Vuntai",
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^41.1.0",
+    "electron-builder": "^26.8.1",
+    "lucide-react": "^1.7.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "autoprefixer": "^10.4.27",
+    "concurrently": "^9.2.1",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^6.0.2",
+    "vite": "^8.0.3",
+    "wait-on": "^9.0.4"
+  },
+  "build": {
+    "appId": "com.vuntai.neurooffice",
+    "productName": "NeuroOffice Builder",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ]
+  }
+}

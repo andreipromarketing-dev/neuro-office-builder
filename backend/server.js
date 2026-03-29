@@ -8,6 +8,13 @@ import Fuse from 'fuse.js';
 import mammoth from 'mammoth';
 import pdf from 'pdf-parse';
 import XLSX from 'xlsx';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+// Импорт модулей оркестрации (могут быть отключены)
+import { setRoles, setDocuments, delegate } from './delegate.js';
+import { orchestrate } from './orchestrate.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -251,6 +258,7 @@ app.post('/api/roles', (req, res) => {
     createdAt: new Date().toISOString() 
   };
   roles.push(role);
+  if (orchestrationEnabled) setRoles(roles);
   console.log(`[РОЛЬ] Создана: ${name} (${savedKbs.length} БД)`);
   res.json(role);
 });
@@ -260,6 +268,7 @@ app.put('/api/roles/:id', (req, res) => {
   const idx = roles.findIndex(r => r.id === req.params.id);
   if (idx !== -1) {
     roles[idx] = { ...roles[idx], name, description, systemPrompt, llmId, knowledgeBases: kbs };
+    if (orchestrationEnabled) setRoles(roles);
     console.log(`[РОЛЬ] Обновлена: ${name}`);
   }
   res.json(roles[idx]);
@@ -267,6 +276,7 @@ app.put('/api/roles/:id', (req, res) => {
 
 app.delete('/api/roles/:id', (req, res) => {
   roles = roles.filter(r => r.id !== req.params.id);
+  if (orchestrationEnabled) setRoles(roles);
   res.json({ success: true });
 });
 
@@ -284,6 +294,7 @@ app.post('/api/knowledge-bases', (req, res) => {
   if (content) {
     documents.push({ id: kb.id, name, content, roleId, type: 'text' });
     rebuildSearchIndex();
+    if (orchestrationEnabled) setDocuments(documents);
   }
   
   console.log(`[БАЗА] Добавлена: ${name}`);
@@ -295,6 +306,7 @@ app.delete('/api/knowledge-bases/:id', (req, res) => {
   knowledgeBases = knowledgeBases.filter(kb => kb.id !== id);
   documents = documents.filter(d => d.id !== id);
   rebuildSearchIndex();
+  if (orchestrationEnabled) setDocuments(documents);
   res.json({ success: true });
 });
 
@@ -687,6 +699,69 @@ async function callAnthropic(apiKey, messages) {
   return data.content?.[0]?.text || 'Пустой ответ';
 }
 
+// ==================== LLM WRAPPER ====================
+
+async function callLLM(llmName, messages) {
+  const llm = llms.find(l => l.name === llmName);
+  if (!llm) {
+    throw new Error(`LLM не найден: ${llmName}`);
+  }
+  
+  if (llm.type === 'ollama') {
+    return await callOllama(llm.endpoint || 'http://localhost:11434', messages);
+  } else if (llm.type === 'lmstudio' || llm.type === 'aya' || llm.type === 'llama' || llm.type === 'mistral' || llm.type === 'deepseek' || llm.type === 'qwen' || llm.type === 'grok') {
+    return await callLMStudio(llm.endpoint || 'http://localhost:1234', messages);
+  } else if (llm.type === 'openai') {
+    return await callOpenAI(llm.apiKey, messages, llm.endpoint);
+  } else if (llm.type === 'anthropic') {
+    return await callAnthropic(llm.apiKey, messages);
+  } else {
+    return await callLMStudio(llm.endpoint || 'http://localhost:1234', messages);
+  }
+}
+
+// ==================== API: DELEGATE (ОТКЛЮЧЕНО) ====================
+// Раскомментируй для включения
+// ==================== ОРКЕСТРАЦИЯ ====================
+// Глобальная настройка - включить/выключить оркестрацию
+let orchestrationEnabled = false;
+
+app.get('/api/orchestration/status', (req, res) => {
+  res.json({ enabled: orchestrationEnabled });
+});
+
+app.post('/api/orchestration/enable', (req, res) => {
+  orchestrationEnabled = true;
+  setRoles(roles);
+  setDocuments(documents);
+  console.log('[ОРКЕСТРАЦИЯ] Включена');
+  res.json({ enabled: true });
+});
+
+app.post('/api/orchestration/disable', (req, res) => {
+  orchestrationEnabled = false;
+  console.log('[ОРКЕСТРАЦИЯ] Выключена');
+  res.json({ enabled: false });
+});
+
+app.post('/api/delegate', async (req, res) => {
+  if (!orchestrationEnabled) {
+    return res.status(403).json({ error: 'Оркестрация выключена. Включите её в настройках.' });
+  }
+  const { bossMessage, bossRoleId } = req.body;
+  const result = await delegate(bossMessage, bossRoleId, callLLM);
+  res.json(result);
+});
+
+app.post('/api/orchestrate', async (req, res) => {
+  if (!orchestrationEnabled) {
+    return res.status(403).json({ error: 'Оркестрация выключена. Включите её в настройках.' });
+  }
+  const { task, bossRoleId } = req.body;
+  const result = await orchestrate(task, bossRoleId, roles, callLLM);
+  res.json(result);
+});
+
 // ==================== API: СОСТОЯНИЕ ====================
 
 app.get('/api/status', (req, res) => {
@@ -730,6 +805,9 @@ function loadData() {
       rebuildSearchIndex();
       console.log(`[ЗАГРУЗКА] Базы знаний: ${knowledgeBases.length}`);
     }
+    
+    setRoles(roles);
+    setDocuments(documents);
   } catch (e) {
     console.error('[ОШИБКА] Загрузка данных:', e.message);
   }

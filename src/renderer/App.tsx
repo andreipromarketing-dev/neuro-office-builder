@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 
-type Tab = 'llm' | 'roles' | 'launch'
+type Tab = 'llm' | 'roles' | 'launch' | 'settings'
 
 interface LLMConfig {
   id: string
@@ -94,6 +94,8 @@ function getTime() {
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('llm')
+  const [orchestrationEnabled, setOrchestrationEnabled] = useState(false)
+  const [llmStatus, setLlmStatus] = useState<Record<string, 'checking' | 'online' | 'offline'>>({})
   // Функция для удаления дублей по имени
   const deduplicate = <T extends {name?: string}>(arr: T[]): T[] => {
     const seen = new Set()
@@ -107,6 +109,11 @@ export default function App() {
   
   const [llms, setLlms] = useState<LLMConfig[]>(deduplicate(load('nob_llms', [])))
   const [roles, setRoles] = useState<Role[]>(deduplicate(load('nob_roles', [])))
+  const [knowledgeBases, setKnowledgeBases] = useState<any[]>([])
+  const [kbEnabled, setKbEnabled] = useState<Record<string, boolean>>({})
+  const [presets, setPresets] = useState<{name: string, llms: any[], roles: any[], kbs: any[]}[]>(() => load('nob_presets', []))
+  const [currentPreset, setCurrentPreset] = useState<string | null>(null)
+  const [newPresetName, setNewPresetName] = useState('')
   const [newLLM, setNewLLM] = useState<{name: string, type: string, apiKey: string, endpoint: string}>(load('nob_newLLM', { name: '', type: '', apiKey: '', endpoint: '' }))
   const [showAddLLMForm, setShowAddLLMForm] = useState(false)
   const [showAddRoleForm, setShowAddRoleForm] = useState(false)
@@ -120,6 +127,42 @@ export default function App() {
     if (llms.length > 0 && !newRole.llmId) {
       setNewRole(prev => ({ ...prev, llmId: llms[0].id }))
     }
+  }, [llms.length])
+  
+  // Загрузка статуса оркестрации
+  useEffect(() => {
+    fetch(`${API_BASE}/orchestration/status`).then(r => r.json()).then(d => setOrchestrationEnabled(d.enabled)).catch(() => {})
+  }, [])
+  
+  // Автосинхронизация при загрузке
+  useEffect(() => {
+    syncWithBackend()
+  }, [])
+  
+  // Автопроверка LLM каждые 10 секунд
+  useEffect(() => {
+    const checkLLMs = async () => {
+      for (const llm of llms) {
+        setLlmStatus(prev => ({ ...prev, [llm.id]: 'checking' }))
+        try {
+          const controller = new AbortController()
+          const timeout = setTimeout(() => controller.abort(), 3000)
+          
+          const endpoint = llm.endpoint || (llm.type === 'ollama' ? 'http://localhost:11434' : 'http://localhost:1234')
+          const url = llm.type === 'ollama' ? `${endpoint}/api/tags` : `${endpoint}/v1/models`
+          
+          const res = await fetch(url, { signal: controller.signal })
+          clearTimeout(timeout)
+          setLlmStatus(prev => ({ ...prev, [llm.id]: res.ok ? 'online' : 'offline' }))
+        } catch {
+          setLlmStatus(prev => ({ ...prev, [llm.id]: 'offline' }))
+        }
+      }
+    }
+    
+    checkLLMs()
+    const interval = setInterval(checkLLMs, 10000)
+    return () => clearInterval(interval)
   }, [llms.length])
   
   // Автосохранение всех ролей и LLM (с дедупликацией)
@@ -172,6 +215,24 @@ export default function App() {
       }
       
       addLog('СИНХРОН', `Сохранено в бэкенд: ${llms.length} LLM, ${roles.length} ролей`)
+      
+      // Проверяем подключение каждой LLM
+      for (const llm of backendLlms) {
+        setLlmStatus(prev => ({ ...prev, [llm.id]: 'checking' }))
+        try {
+          const controller = new AbortController()
+          const timeout = setTimeout(() => controller.abort(), 3000)
+          
+          const endpoint = llm.endpoint || (llm.type === 'ollama' ? 'http://localhost:11434' : 'http://localhost:1234')
+          const url = llm.type === 'ollama' ? `${endpoint}/api/tags` : `${endpoint}/v1/models`
+          
+          const res = await fetch(url, { signal: controller.signal })
+          clearTimeout(timeout)
+          setLlmStatus(prev => ({ ...prev, [llm.id]: res.ok ? 'online' : 'offline' }))
+        } catch {
+          setLlmStatus(prev => ({ ...prev, [llm.id]: 'offline' }))
+        }
+      }
     } catch (e: any) {
       console.error('Sync error:', e)
       addLog('ОШИБКА', `Синхронизация: ${e.message}`)
@@ -256,8 +317,6 @@ export default function App() {
   const [chainLog, setChainLog] = useState<{from: string, to: string, message: string}[]>([])
   const [fileSearchQuery, setFileSearchQuery] = useState('')
   const [fileSearchResults, setFileSearchResults] = useState<any[]>([])
-  const [folderPath, setFolderPath] = useState('')
-  const [folderScanResults, setFolderScanResults] = useState<any[]>([])
   const [scanning, setScanning] = useState(false)
 
   const addLog = (action: string, details: string) => {
@@ -692,6 +751,7 @@ export default function App() {
       
       setLlms(backendLlms)
       setRoles(backendRoles)
+      setKnowledgeBases(backendKbs)
       save('nob_llms', backendLlms)
       save('nob_roles', backendRoles)
       
@@ -699,6 +759,63 @@ export default function App() {
     } catch (e: any) {
       addLog('ОШИБКА', `Синхронизация: ${e.message}`)
     }
+  }
+  
+  const savePreset = async (nameOverride?: string) => {
+    const presetName = nameOverride || newPresetName
+    if (!presetName || !presetName.trim()) {
+      showMsg('Введите название пресета')
+      return
+    }
+    try {
+      const [llmsRes, rolesRes, kbsRes] = await Promise.all([
+        fetch(`${API_BASE}/llms`),
+        fetch(`${API_BASE}/roles`),
+        fetch(`${API_BASE}/knowledge-bases`)
+      ])
+      const llms = await llmsRes.json()
+      const roles = await rolesRes.json()
+      const kbs = await kbsRes.json()
+      
+      const preset = { name: presetName.trim(), llms, roles, kbs }
+      const newPresets = [...presets.filter(p => p.name !== preset.name), preset]
+      setPresets(newPresets)
+      save('nob_presets', newPresets)
+      setNewPresetName('')
+      showMsg(`Пресет "${preset.name}" сохранён`)
+    } catch (e: any) {
+      showMsg('Ошибка сохранения: ' + e.message)
+    }
+  }
+  
+  const loadPreset = async (preset: {name: string, llms: any[], roles: any[], kbs: any[]}) => {
+    if (!confirm(`Загрузить пресет "${preset.name}"? Текущие данные будут заменены.`)) return
+    
+    try {
+      for (const llm of preset.llms) {
+        await fetch(`${API_BASE}/llms`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(llm) })
+      }
+      for (const role of preset.roles) {
+        await fetch(`${API_BASE}/roles`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: role.name, description: role.description, systemPrompt: role.systemPrompt, llmId: role.llmId || '', llmName: role.llmName || '', knowledgeBases: role.knowledgeBases?.map((kb: any) => kb.id) || [] }) })
+      }
+      for (const kb of preset.kbs) {
+        await fetch(`${API_BASE}/knowledge-bases`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(kb) })
+      }
+      
+      await syncWithBackend()
+      setCurrentPreset(preset.name)
+      showMsg(`Пресет "${preset.name}" загружен`)
+    } catch (e: any) {
+      showMsg('Ошибка загрузки: ' + e.message)
+    }
+  }
+  
+  const deletePreset = (name: string) => {
+    if (!confirm(`Удалить пресет "${name}"?`)) return
+    const newPresets = presets.filter(p => p.name !== name)
+    setPresets(newPresets)
+    save('nob_presets', newPresets)
+    showMsg(`Пресет "${name}" удалён`)
   }
 
   const callLLM = async (messages: {role: string, content: string}[], endpoint: string): Promise<string> => {
@@ -737,44 +854,6 @@ export default function App() {
       addLog('ПОИСК', `Найдено: ${results.length} файлов`)
     } catch (e: any) {
       addLog('ОШИБКА', `Поиск: ${e.message}`)
-    }
-  }
-
-  const scanFolder = async () => {
-    if (!folderPath.trim()) return
-    setScanning(true)
-    addLog('ПАПКА', `Сканирование: ${folderPath}`)
-    try {
-      const response = await fetch(`${API_BASE}/folders/scan`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ folderPath, roleId: '' })
-      })
-      const data = await response.json()
-      setFolderScanResults(data.files || [])
-      addLog('ПАПКА', `Найдено файлов: ${data.count}`)
-    } catch (e: any) {
-      addLog('ОШИБКА', `Папка: ${e.message}`)
-    }
-    setScanning(false)
-  }
-
-  const importFromFolder = async () => {
-    if (folderScanResults.length === 0) return
-    try {
-      const response = await fetch(`${API_BASE}/folders/import`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ files: folderScanResults, roleId: '' })
-      })
-      const data = await response.json()
-      addLog('ИМПОРТ', `Добавлено: ${data.count} файлов`)
-      await syncWithBackend()
-      setFolderScanResults([])
-      setFolderPath('')
-      showMsg(`Импортировано ${data.count} файлов!`)
-    } catch (e: any) {
-      addLog('ОШИБКА', `Импорт: ${e.message}`)
     }
   }
 
@@ -865,10 +944,11 @@ export default function App() {
     { id: 'llm', label: '🤖 LLM' },
     { id: 'roles', label: '👥 Роли + Базы' },
     { id: 'launch', label: '🚀 Старт' },
+    { id: 'settings', label: '⚙️ Настройки' },
   ]
 
-  const next = () => { const o: Tab[] = ['llm', 'roles', 'launch']; const i = o.indexOf(tab); if (i < o.length - 1) setTab(o[i + 1]) }
-  const prev = () => { const o: Tab[] = ['llm', 'roles', 'launch']; const i = o.indexOf(tab); if (i > 0) setTab(o[i - 1]) }
+  const next = () => { const o: Tab[] = ['llm', 'roles', 'launch', 'settings']; const i = o.indexOf(tab); if (i < o.length - 1) setTab(o[i + 1]) }
+  const prev = () => { const o: Tab[] = ['llm', 'roles', 'launch', 'settings']; const i = o.indexOf(tab); if (i > 0) setTab(o[i - 1]) }
 
   const exportLogs = () => {
     const logText = logs.map(l => `[${l.time}] ${l.action}: ${l.details}`).join('\n')
@@ -904,7 +984,7 @@ export default function App() {
         <h1 style={{ fontFamily: "'Unbounded', sans-serif", fontSize: 20, fontWeight: 700 }}>NeuroOffice Builder</h1>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 16 }}>
         {tabs.map(t => (<button key={t.id} onClick={() => setTab(t.id as Tab)} style={{ padding: '10px 4px', borderRadius: 10, border: 'none', cursor: 'pointer', background: tab === t.id ? '#3ddb7f' : 'rgba(255,255,255,0.1)', color: '#fff', fontSize: 10, fontWeight: 600 }}>{t.label}</button>))}
       </div>
 
@@ -915,13 +995,22 @@ export default function App() {
             <h2 style={{ fontFamily: "'Unbounded', sans-serif", fontSize: 16, marginBottom: 14 }}>🤖 Подключения LLM</h2>
             {llms.length === 0 ? <div style={{ textAlign: 'center', padding: 30, opacity: 0.6 }}>Нет подключений</div> : (
               <div style={{ marginBottom: 16 }}>
-                {llms.map(l => (<div key={l.id} style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 12, marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div><div style={{ fontWeight: 600 }}>{l.name}</div><div style={{ fontSize: 11, opacity: 0.6 }}>{LLM_TYPES.find(t => t.value === l.type)?.label}</div></div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ background: 'rgba(61,219,127,0.2)', color: '#3ddb7f', padding: '4px 10px', borderRadius: 20, fontSize: 11 }}>✓</span>
-                    <button onClick={() => { setLlms(llms.filter(x => x.id !== l.id)); save('nob_llms', llms.filter(x => x.id !== l.id)); addLog('LLM', `Удалён: ${l.name}`) }} style={{ background: 'none', border: 'none', color: '#f44336', cursor: 'pointer', fontSize: 14 }}>✕</button>
-                  </div>
-                </div>))}
+                {llms.map(l => {
+                  const status = llmStatus[l.id]
+                  const statusColor = status === 'online' ? { bg: 'rgba(61,219,127,0.2)', color: '#3ddb7f', text: '✓ Онлайн' }
+                    : status === 'offline' ? { bg: 'rgba(244,67,54,0.2)', color: '#f44336', text: '✕ Не работает' }
+                    : status === 'checking' ? { bg: 'rgba(255,140,0,0.2)', color: '#ff8c00', text: '⏳ Проверка...' }
+                    : { bg: 'rgba(255,255,255,0.1)', color: '#888', text: '? Не проверено' }
+                  return (
+                    <div key={l.id} style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 12, marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div><div style={{ fontWeight: 600 }}>{l.name}</div><div style={{ fontSize: 11, opacity: 0.6 }}>{LLM_TYPES.find(t => t.value === l.type)?.label}</div></div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ background: statusColor.bg, color: statusColor.color, padding: '4px 10px', borderRadius: 20, fontSize: 11 }}>{statusColor.text}</span>
+                        <button onClick={() => { setLlms(llms.filter(x => x.id !== l.id)); save('nob_llms', llms.filter(x => x.id !== l.id)); addLog('LLM', `Удалён: ${l.name}`) }} style={{ background: 'none', border: 'none', color: '#f44336', cursor: 'pointer', fontSize: 14 }}>✕</button>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             )}
             {!showAddLLMForm ? (
@@ -940,8 +1029,7 @@ export default function App() {
               </>
             )}
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 14 }}>
-              <button onClick={manualSync} style={{ padding: 10, background: 'rgba(61,219,127,0.2)', border: '1px solid rgba(61,219,127,0.4)', borderRadius: 10, color: '#3ddb7f', fontSize: 11, cursor: 'pointer' }}>🔄 Синхр</button>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 14 }}>
               <button onClick={exportData} style={{ padding: 10, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, color: '#fff', fontSize: 11, cursor: 'pointer' }}>📥 Эксп</button>
               <input type="file" onChange={importData} accept=".json" style={{ display: 'none' }} id="import-data" />
               <button onClick={() => document.getElementById('import-data')?.click()} style={{ padding: 10, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, color: '#fff', fontSize: 11, cursor: 'pointer' }}>📤 Импорт</button>
@@ -956,6 +1044,53 @@ export default function App() {
         {tab === 'roles' && (
           <div>
             <h2 style={{ fontFamily: "'Unbounded', sans-serif", fontSize: 16, marginBottom: 14 }}>👥 Роли + Базы знаний</h2>
+            
+            {/* Панель пресетов */}
+            <div style={{ background: 'rgba(156,39,176,0.15)', borderRadius: 12, padding: 12, marginBottom: 16 }}>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
+                <span style={{ fontSize: 11, opacity: 0.7 }}>Пресеты:</span>
+                {presets.map((p, i) => (
+                  <button 
+                    key={i} 
+                    onClick={() => { loadPreset(p); setCurrentPreset(p.name) }}
+                    style={{ padding: '6px 12px', background: currentPreset === p.name ? 'rgba(156,39,176,0.8)' : 'rgba(156,39,176,0.3)', border: currentPreset === p.name ? '2px solid #3ddb7f' : '1px solid rgba(156,39,176,0.5)', borderRadius: 20, color: '#fff', fontSize: 11, cursor: 'pointer' }}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+                {presets.length === 0 && <span style={{ fontSize: 11, opacity: 0.5 }}>Нет пресетов</span>}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button 
+                  onClick={async () => {
+                    const name = prompt('Название нового пресета:')
+                    if (name) {
+                      await savePreset(name)
+                      setCurrentPreset(name)
+                    }
+                  }}
+                  style={{ flex: 1, padding: '8px 12px', background: '#3ddb7f', border: 'none', borderRadius: 8, color: '#000', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+                >
+                  + Новый
+                </button>
+                <button 
+                  onClick={async () => {
+                    if (!currentPreset) {
+                      showMsg('Выберите пресет сначала')
+                      return
+                    }
+                    if (confirm(`Обновить пресет "${currentPreset}"?`)) {
+                      await savePreset(currentPreset)
+                      showMsg(`Пресет "${currentPreset}" обновлён`)
+                    }
+                  }}
+                  disabled={!currentPreset}
+                  style={{ flex: 1, padding: '8px 12px', background: currentPreset ? '#ff8c42' : 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, color: currentPreset ? '#000' : '#666', fontSize: 11, fontWeight: 600, cursor: currentPreset ? 'pointer' : 'not-allowed' }}
+                >
+                  🔄 Обновить
+                </button>
+              </div>
+            </div>
             
             {roles.length > 0 && roles.map(role => (
               <div key={role.id} style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 14, padding: 14, marginBottom: 12 }}>
@@ -1001,27 +1136,93 @@ export default function App() {
 
             {/* 📂 Индексация папки */}
             <div style={{ background: 'rgba(156,39,176,0.1)', border: '1px solid rgba(156,39,176,0.3)', borderRadius: 14, padding: 14, marginBottom: 12 }}>
-              <div style={{ fontWeight: 600, marginBottom: 8, color: '#ce93d8' }}>📂 Индексация папки</div>
-              <div style={{ fontSize: 10, opacity: 0.7, marginBottom: 10, color: 'rgba(255,255,255,0.7)' }}>Сканирует папку и добавляет все документы в базу знаний (PDF, DOCX, XLSX, TXT, MD)</div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <input 
-                  value={folderPath} 
-                  onChange={e => setFolderPath(e.target.value)} 
-                  placeholder="Путь к папке (например: C:\Договоры)" 
-                  style={{ flex: 1, padding: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#fff', fontSize: 12 }} 
-                />
-                <button onClick={scanFolder} disabled={scanning} style={{ padding: '10px 14px', background: '#ce93d8', border: 'none', borderRadius: 8, color: '#000', fontSize: 12, cursor: scanning ? 'not-allowed' : 'pointer', opacity: scanning ? 0.5 : 1 }}>{scanning ? '...' : '🔍'}</button>
-              </div>
-              {folderScanResults.length > 0 && (
-                <div style={{ marginTop: 10 }}>
-                  <div style={{ fontSize: 11, color: '#ce93d8', marginBottom: 6 }}>Найдено файлов: {folderScanResults.length}</div>
-                  {folderScanResults.slice(0, 5).map((f, i) => (
-                    <div key={i} style={{ fontSize: 10, opacity: 0.7, marginBottom: 4 }}>📄 {f.name}</div>
+              <div style={{ fontWeight: 600, marginBottom: 8, color: '#ce93d8' }}>📂 Загрузка файлов</div>
+              <div style={{ fontSize: 10, opacity: 0.7, marginBottom: 10, color: 'rgba(255,255,255,0.7)' }}>Выберите файлы с компьютера для добавления в общую базу знаний (PDF, DOCX, XLSX, TXT, MD)</div>
+              
+              <input 
+                type="file" 
+                multiple 
+                accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.md,.csv"
+                onChange={async (e) => {
+                  const files = e.target.files
+                  if (!files || files.length === 0) return
+                  
+                  setScanning(true)
+                  addLog('ФАЙЛЫ', `Загрузка ${files.length} файлов...`)
+                  
+                  for (const file of Array.from(files)) {
+                    try {
+                      const content = await file.text()
+                      await fetch(`${API_BASE}/folders/import`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                          files: [{ name: file.name, content: btoa(unescape(encodeURIComponent(content))) }],
+                          roleId: ''
+                        })
+                      })
+                    } catch (err) {
+                      console.error('Error uploading:', file.name, err)
+                    }
+                  }
+                  
+                  addLog('ФАЙЛЫ', `Загружено ${files.length} файлов`)
+                  setScanning(false)
+                  syncWithBackend()
+                  showMsg(`Добавлено ${files.length} файлов в базу знаний`)
+                }}
+                style={{ display: 'none' }} 
+                id="file-upload"
+              />
+              <button 
+                onClick={() => document.getElementById('file-upload')?.click()} 
+                disabled={scanning}
+                style={{ width: '100%', padding: 14, background: '#ce93d8', border: 'none', borderRadius: 10, color: '#000', fontSize: 13, fontWeight: 600, cursor: scanning ? 'not-allowed' : 'pointer', opacity: scanning ? 0.5 : 1 }}
+              >
+                📁 Выбрать файлы с компьютера
+              </button>
+            </div>
+
+            {/* 📚 Общая база знаний */}
+            <div style={{ background: 'rgba(33,185,244,0.1)', border: '1px solid rgba(33,185,244,0.3)', borderRadius: 14, padding: 14, marginBottom: 12 }}>
+              <div style={{ fontWeight: 600, marginBottom: 8, color: '#21b9f4' }}>📚 Общая база знаний</div>
+              <div style={{ fontSize: 10, opacity: 0.7, marginBottom: 10 }}>Файлы доступны всем ролям (вкл/выкл использование)</div>
+              
+              {knowledgeBases.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 20, opacity: 0.5, fontSize: 12 }}>Нет файлов</div>
+              ) : (
+                <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+                  {knowledgeBases.map((kb: any) => (
+                    <div key={kb.id} style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 8, padding: 10, marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, overflow: 'hidden' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={kbEnabled[kb.id] !== false}
+                          onChange={(e) => setKbEnabled(prev => ({ ...prev, [kb.id]: e.target.checked }))}
+                          style={{ width: 18, height: 18, cursor: 'pointer' }}
+                        />
+                        <div style={{ flex: 1, overflow: 'hidden' }}>
+                          <div style={{ fontWeight: 600, fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', opacity: kbEnabled[kb.id] !== false ? 1 : 0.5 }}>{kb.name}</div>
+                          <div style={{ fontSize: 10, opacity: 0.5 }}>{kb.content?.length || 0} символов</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button 
+                          onClick={async () => {
+                            if (confirm(`Удалить файл "${kb.name}"?`)) {
+                              await fetch(`${API_BASE}/knowledge-bases/${kb.id}`, { method: 'DELETE' })
+                              syncWithBackend()
+                              showMsg('Файл удалён')
+                            }
+                          }}
+                          style={{ background: 'rgba(244,67,54,0.2)', border: 'none', borderRadius: 6, color: '#f44336', padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}
+                        >🗑</button>
+                      </div>
+                    </div>
                   ))}
-                  {folderScanResults.length > 5 && <div style={{ fontSize: 10, opacity: 0.5 }}>... и ещё {folderScanResults.length - 5}</div>}
-                  <button onClick={importFromFolder} style={{ width: '100%', marginTop: 10, padding: 10, background: '#3ddb7f', border: 'none', borderRadius: 8, color: '#000', fontSize: 12, cursor: 'pointer' }}>➕ Добавить все в базу знаний</button>
                 </div>
               )}
+              <div style={{ fontSize: 10, opacity: 0.5, marginTop: 8 }}>Всего файлов: {knowledgeBases.length} | Активных: {Object.values(kbEnabled).filter(v => v !== false).length}</div>
             </div>
 
             {/* Редактирование */}
@@ -1291,6 +1492,100 @@ export default function App() {
             )}
 
             <button onClick={prev} style={{ width: '100%', padding: 14, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 12, color: '#fff', fontSize: 14, cursor: 'pointer' }}>← Назад</button>
+          </div>
+        )}
+
+        {tab === 'settings' && (
+          <div>
+            <h2 style={{ fontFamily: "'Unbounded', sans-serif", fontSize: 16, marginBottom: 14 }}>⚙️ Настройки</h2>
+            
+            {/* Оркестрация */}
+            <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 14, padding: 16, marginBottom: 16 }}>
+              <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 8 }}>🎯 Режим оркестрации</div>
+              <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 12, lineHeight: 1.5 }}>
+                Позволяет одной роли (Руководитель) делегировать задачи другим ботам. Например: Руководитель получает задачу "Обработай заказ" → сам вызывает Юриста, Секретаря и т.д. → собирает ответ → возвращает результат.
+              </div>
+              <div style={{ fontSize: 10, opacity: 0.5, marginBottom: 12, padding: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 8 }}>
+                <strong>Когда включать:</strong> Если у вас несколько ролей и вы хотите чтобы они работали вместе автоматически.<br/>
+                <strong>Когда НЕ включать:</strong> Для простых задач одной роли - это лишняя нагрузка на LLM.
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button 
+                  onClick={async () => {
+                    const newState = !orchestrationEnabled
+                    try {
+                      await fetch(`${API_BASE}/orchestration/${newState ? 'enable' : 'disable'}`, { method: 'POST' })
+                      setOrchestrationEnabled(newState)
+                      showMsg(newState ? 'Оркестрация включена' : 'Оркестрация выключена')
+                    } catch (e) { showMsg('Ошибка переключения') }
+                  }}
+                  style={{ 
+                    padding: '12px 24px', 
+                    background: orchestrationEnabled ? '#3ddb7f' : 'rgba(255,255,255,0.1)', 
+                    border: 'none', 
+                    borderRadius: 10, 
+                    color: orchestrationEnabled ? '#000' : '#fff', 
+                    fontSize: 13, 
+                    fontWeight: 600, 
+                    cursor: 'pointer' 
+                  }}
+                >
+                  {orchestrationEnabled ? '✅ Включено' : '❌ Выключено'}
+                </button>
+                <span style={{ fontSize: 11, opacity: 0.6 }}>
+                  {orchestrationEnabled ? 'Боты могут вызывать друг друга' : 'Боты работают по отдельности'}
+                </span>
+              </div>
+            </div>
+
+            {/* Информация о системе */}
+            <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 14, padding: 16 }}>
+              <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 12 }}>📊 Информация</div>
+              <div style={{ fontSize: 11, opacity: 0.7 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}><span>LLM подключено:</span><span style={{ fontWeight: 600 }}>{llms.length}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}><span>Ролей создано:</span><span style={{ fontWeight: 600 }}>{roles.length}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}><span>Базы знаний:</span><span style={{ fontWeight: 600 }}>{roles.reduce((a, r) => a + r.knowledgeBases.length, 0)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Оркестрация:</span><span style={{ fontWeight: 600, color: orchestrationEnabled ? '#3ddb7f' : '#ff6b6b' }}>{orchestrationEnabled ? 'Включена' : 'Выключена'}</span></div>
+              </div>
+            </div>
+
+            {/* Пресеты */}
+            <div style={{ background: 'rgba(156,39,176,0.1)', border: '1px solid rgba(156,39,176,0.3)', borderRadius: 14, padding: 16, marginTop: 16 }}>
+              <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 8 }}>💾 Пресеты (наборы ролей)</div>
+              <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 12 }}>Сохраняйте и загружайте разные наборы ролей и баз знаний</div>
+              
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                <input 
+                  value={newPresetName} 
+                  onChange={e => setNewPresetName(e.target.value)}
+                  placeholder="Название пресета..."
+                  style={{ flex: 1, padding: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#fff', fontSize: 12 }}
+                />
+                <button onClick={savePreset} style={{ padding: '10px 16px', background: '#3ddb7f', border: 'none', borderRadius: 8, color: '#000', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>💾</button>
+              </div>
+              
+              {presets.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 16, opacity: 0.5, fontSize: 12 }}>Нет сохранённых пресетов</div>
+              ) : (
+                <div style={{ maxHeight: 150, overflowY: 'auto' }}>
+                  {presets.map((p, i) => (
+                    <div key={i} style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 8, padding: 10, marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 12 }}>{p.name}</div>
+                        <div style={{ fontSize: 10, opacity: 0.5 }}>{p.roles.length} ролей, {p.kbs.length} баз</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button onClick={() => loadPreset(p)} style={{ background: 'rgba(61,219,127,0.2)', border: 'none', borderRadius: 6, color: '#3ddb7f', padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}>📂</button>
+                        <button onClick={() => deletePreset(p.name)} style={{ background: 'rgba(244,67,54,0.2)', border: 'none', borderRadius: 6, color: '#f44336', padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}>🗑</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button onClick={prev} style={{ width: '100%', padding: 14, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 12, color: '#fff', fontSize: 14, cursor: 'pointer', marginTop: 16 }}>← Назад</button>
           </div>
         )}
       </div>

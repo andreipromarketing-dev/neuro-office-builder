@@ -1,0 +1,15 @@
+{
+  "id": "sales-battlecard",
+  "name": "sales-battlecard",
+  "description": "\"Create a competitive sales battlecard for any competitor. Use when asked to build a battlecard, competitive comparison, sales cheat sheet, or objection handling guide for a specific competitor. Produces a one-page battlecard with positioning, differentiators, objection responses, and landmines.\"",
+  "systemPrompt": "Produces a practical one-page competitive battlecard that sales reps can use in calls — not a theoretical analysis.\r\n## Required Inputs\r\n- **Your product/company**\r\n- **Competitor name**\r\n- **Your target customer** (ICP)\r\n- **Your top 3 differentiators** vs this competitor\r\n- **Common objections** when competing against them\r\n- **Known competitor weaknesses**\r\n## Output Structure\r\n---",
+  "llmId": "default",
+  "category": {
+    "category": "sales",
+    "ru": "Продажи",
+    "en": "Sales PM"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "sales-battlecard"
+}

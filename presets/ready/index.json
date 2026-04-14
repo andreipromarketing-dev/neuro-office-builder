@@ -1,0 +1,142 @@
+{
+  "generated": "2026-04-11T16:32:53.839Z",
+  "total": 95,
+  "categories": [
+    "product",
+    "design",
+    "sales",
+    "engineering",
+    "other",
+    "business",
+    "finance",
+    "research",
+    "marketing",
+    "legal",
+    "hr",
+    "cross",
+    "operations"
+  ],
+  "byCategory": {
+    "product": [
+      "ab-test-planner",
+      "ai-product-canvas",
+      "ambiguity-resolver",
+      "competitive-intelligence-monitor",
+      "competitor-signal-tracker",
+      "data-analysis-standard",
+      "design-handoff-brief",
+      "executive-update",
+      "experiment-designer",
+      "feature-prioritisation",
+      "go-to-market-planner",
+      "job-story-mapper",
+      "multi-source-signal-synthesiser",
+      "okr-builder",
+      "pm-weekly-review",
+      "prd-template",
+      "product-health-analysis",
+      "product-launch-checklist",
+      "retention-analysis",
+      "retro-analysis",
+      "rice-prioritisation",
+      "roadmap-presentation",
+      "sprint-brief",
+      "sprint-planning",
+      "stakeholder-influence-mapper",
+      "strategic-narrative-generator",
+      "technical-spec-template",
+      "user-research-synthesis"
+    ],
+    "design": [
+      "accessibility-audit",
+      "design-critique",
+      "ux-research-plan"
+    ],
+    "sales": [
+      "account-plan",
+      "discovery-call-prep",
+      "proposal-writer",
+      "sales-battlecard"
+    ],
+    "engineering": [
+      "api-docs-writer",
+      "architecture-decision-record",
+      "code-review-checklist",
+      "incident-postmortem"
+    ],
+    "other": [
+      "assumption-mapper",
+      "dashboard-brief",
+      "discovery-interview-guide",
+      "figma-annotation-guide",
+      "figma-component-audit",
+      "figma-design-brief",
+      "figma-design-critique-pm",
+      "figma-design-qa",
+      "figma-design-review",
+      "figma-prototype-plan",
+      "figma-spacing-system",
+      "figma-user-flow-planner",
+      "figma-variant-matrix",
+      "meeting-notes",
+      "rice-impact-matrix",
+      "roadmap-narrative",
+      "stakeholder-update",
+      "team-offsite-planner",
+      "user-interview-synthesis"
+    ],
+    "business": [
+      "board-deck-narrative",
+      "investor-update",
+      "job-application"
+    ],
+    "finance": [
+      "budget-variance-analysis",
+      "financial-due-diligence",
+      "financial-model-narrative",
+      "investor-pitch-deck",
+      "metrics-framework",
+      "sql-query-explainer"
+    ],
+    "research": [
+      "clinical-case-summary",
+      "literature-review",
+      "patient-communication",
+      "research-protocol"
+    ],
+    "marketing": [
+      "competitive-analysis",
+      "competitor-teardown",
+      "content-calendar",
+      "email-campaign",
+      "go-to-market",
+      "launch-readiness",
+      "pricing-strategy"
+    ],
+    "legal": [
+      "compliance-checklist",
+      "contract-review",
+      "legal-brief",
+      "nda-analyser"
+    ],
+    "hr": [
+      "employee-engagement-survey",
+      "hiring-rubric",
+      "job-description-writer",
+      "onboarding-plan",
+      "performance-review",
+      "redundancy-consultation"
+    ],
+    "cross": [
+      "executive-summary",
+      "grant-proposal",
+      "press-release"
+    ],
+    "operations": [
+      "process-documentation",
+      "project-status-report",
+      "sop-writer",
+      "vendor-evaluation"
+    ]
+  }
+}

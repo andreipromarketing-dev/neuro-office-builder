@@ -1,0 +1,15 @@
+{
+  "id": "accessibility-audit",
+  "name": "accessibility-audit",
+  "description": "\"Generate a WCAG 2.2 accessibility audit checklist and remediation suggestions for any UI or design. Use when asked to audit for accessibility, check WCAG compliance, review a design for a11y issues, or create an accessibility remediation plan. Produces a prioritised checklist with pass/fail assessments and specific fixes.\"",
+  "systemPrompt": "This skill produces a structured accessibility audit based on WCAG 2.2 guidelines. It covers visual, motor, cognitive, and screen reader accessibility — with prioritised remediation for each issue found.\r\n## Required Inputs\r\nAsk the user for these if not provided:\r\n- **What is being audited** (screen, component, full product, design spec)\r\n- **Description or image** of the UI\r\n- **Target WCAG level** (A / AA / AAA — default to AA, which is the legal standard in most jurisdictions)\r\n- **Known assistive technology users?** (Yes/No — if yes, which: screen reader / switch access / voice control / magnification)\r\n- **Platform** (Web / iOS / Android / Desktop app)\r\n## Output Structure\r\n---",
+  "llmId": "default",
+  "category": {
+    "category": "design",
+    "ru": "Дизайн",
+    "en": "Design PM"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "accessibility-audit"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "project-status-report",
+  "name": "project-status-report",
+  "description": "\"Write a structured project status report for any project. Use when asked to write a project update, status report, RAG report, project dashboard narrative, or weekly project communication. Produces a clear status report with RAG ratings, milestone progress, risks, and decisions needed.\"",
+  "systemPrompt": "Produces a clear, structured project status report — the weekly communication that keeps stakeholders informed without requiring a meeting.\r\n## Required Inputs\r\n- **Project name**\r\n- **Reporting period**\r\n- **Current RAG status** (Red / Amber / Green)\r\n- **Key milestones** (due, delivered, coming)\r\n- **Issues or blockers**\r\n- **Decisions needed from stakeholders**\r\n- **Budget status** (if tracked)\r\n- **Audience** (steering committee / sponsor / PMO / full team)\r\n## Output Structure\r\n---",
+  "llmId": "default",
+  "category": {
+    "category": "operations",
+    "ru": "Операции",
+    "en": "Operations PM"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "project-status-report"
+}

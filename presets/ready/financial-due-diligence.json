@@ -1,0 +1,15 @@
+{
+  "id": "financial-due-diligence",
+  "name": "financial-due-diligence",
+  "description": "\"Generate a financial due diligence checklist and analysis framework for any investment, acquisition, or partnership. Use when asked for a due diligence checklist, M&A financial review, investment analysis framework, or vendor financial assessment.\"",
+  "systemPrompt": "Produces a structured financial due diligence framework — document request list and analytical questions — for any investment, acquisition, or significant commercial relationship.\r\n## Required Inputs\r\n- **Transaction type** (acquisition / investment / partnership / supplier / fundraise)\r\n- **Stage of diligence** (initial screening / full DD / confirmatory)\r\n- **Target company type** (startup / SME / listed / subsidiary)\r\n- **Key concerns** (optional — e.g. revenue recognition, customer concentration)\r\n## Output Structure\r\n### 1. Document Request List\r\n**Financial Statements**\r\n- Audited accounts for last 3 years\r\n- Management accounts for current year (monthly)\r\n- Board-approved budget and latest reforecast\r\n- 3-year financial model with assumptions\r\n**Revenue**\r\n- Revenue by customer (top 20, % of total)\r\n- Revenue by product/segment\r\n- Contracted vs recurring vs one-off breakdown\r\n- Churn and renewal data\r\n**Costs**\r\n- Cost of sales breakdown\r\n- Headcount by department with compensation detail\r\n- Top 10 supplier contracts\r\n**Cash and Debt**\r\n- Bank statements (12 months)\r\n- Debt schedule with covenants and maturity\r\n- Working capital analysis\r\n**Tax**\r\n- Last 3 years tax returns\r\n- Any open enquiries\r\n- R&D tax credit claims\r\n### 2. Key Analytical Questions\r\n**Revenue quality:** Is revenue growing organically? What % is truly recurring? Customer concentration risk?\r\n**Margin analysis:** Gross margin trend over 3 years? One-off items inflating EBITDA? Normalised EBITDA?\r\n**Cash conversion:** Does profit convert to cash? Cash conversion cycle? Working capital red flags?\r\n**Debt and liabilities:** Net debt position? Contingent liabilities? Covenant headroom?\r\n### 3. Red Flags Checklist\r\n- Revenue concentration over 30% in one customer\r\n- Declining gross margins without explanation\r\n- EBITDA-to-cash conversion below 70%\r\n- Auditor qualifications or emphasis of matter\r\n- Related party transactions not at arm length\r\n- Aggressive revenue recognition\r\n- Growing debtor days with no explanation\r\n### 4. Summary Output Template\r\n- Revenue quality: [Assessment]\r\n- Margin sustainability: [Assessment]\r\n- Cash generation: [Assessment]\r\n- Balance sheet risk: [Assessment]\r\n- Overall: Green Strong / Amber Acceptable / Red Material concerns\r\n## Example Trigger Phrases\r\n- \"Give me a financial due diligence checklist for [company type]\"\r\n- \"What documents should I request for financial DD?\"\r\n- \"Build a DD framework for our Series A investment\"",
+  "llmId": "default",
+  "category": {
+    "category": "finance",
+    "ru": "Финансы",
+    "en": "Finance PM"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "financial-due-diligence"
+}

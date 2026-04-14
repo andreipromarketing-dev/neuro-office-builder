@@ -1,0 +1,15 @@
+{
+  "id": "board-deck-narrative",
+  "name": "board-deck-narrative",
+  "description": "\"Build the storyline and slide structure for a board presentation. Use when asked to create a board deck, board presentation narrative, board meeting slides, or quarterly board update. Produces a complete slide-by-slide structure with narrative beats, talking points, and slide content guidance.\"",
+  "systemPrompt": "This skill builds the complete narrative and slide structure for a board presentation — from opening framing to closing asks. It produces slide-by-slide content guidance, not just a list of topics.\r\n## Required Inputs\r\nAsk the user for these if not provided:\r\n- **Company stage and context** (Seed / Series A / Growth — and where you are in the year)\r\n- **Board meeting type** (Regular quarterly / Annual / Special / Fundraise-related)\r\n- **Key themes for this meeting** (e.g. strong growth quarter / pivoting strategy / hiring challenge / fundraise update)\r\n- **Key metrics to feature**\r\n- **Decisions needed from the board** (if any)\r\n- **Time available** (e.g. 60 min / 90 min)\r\n- **Audience** (investors only / investors + independent directors / mixed)\r\n## Output Structure\r\n---",
+  "llmId": "default",
+  "category": {
+    "category": "business",
+    "ru": "Бизнес",
+    "en": "Business PM"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "board-deck-narrative"
+}

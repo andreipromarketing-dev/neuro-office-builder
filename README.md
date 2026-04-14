@@ -64,6 +64,30 @@ NeuroOffice Builder позволяет:
 
 ---
 
+## v1.3 (Текущая версия)
+
+### Безопасность
+- **API ключи в .env** — токены LLM хранятся в файле `backend/.env`, а не в localStorage
+- Поддержка: GROQ_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY
+- UI показывает подсказку о безопасном хранении ключей
+
+### Архитектура LLM адаптеров (новое)
+- Модульная система адаптеров в `backend/llm-adapters/`
+- Базовый класс `LLMAdapter` с абстрактными методами
+- Фабрика `LLMAdapterFactory` для регистрации и выбора адаптеров
+- Поддержка 11+ типов LLM: Ollama, LM Studio, Aya, Llama, Mistral, DeepSeek, Qwen, Grok, OpenAI, Anthropic, Google, UncloseAI
+
+### Интеграция пресетов (новое)
+- Импорт профессиональных навыков из pm-claude-skills
+- 95 пресетов для разных профессий в `presets/ready/`
+- Категории: Product Manager, Маркетинг, Юрист, Финансы, HR, Продажи, Операции, Инженер, Дизайн, Медицина
+
+### Исправления
+- Синхронизация баз знаний — передаётся полный контент, а не только ID
+- Загрузка пресетов — базы знаний загружаются до ролей
+
+---
+
 ## Установка
 
 ```bash
@@ -84,6 +108,43 @@ cd backend && npm start  # Бэкенд на :3001
 **Требования:**
 - Node.js 18+
 - Запущенная LLM (Ollama/LM Studio/Cohere)
+
+## Структура проекта
+
+```
+neuro-office-builder/
+├── backend/
+│   ├── server.js           # Express API + RAG
+│   ├── package.json
+│   ├── .env                # API ключи (не в git)
+│   ├── llm-adapters/       # Модульные адаптеры LLM
+│   │   ├── adapter.js      # Базовый класс
+│   │   ├── factory.js      # Фабрика адаптеров
+│   │   ├── ollama.js
+│   │   ├── lmstudio.js
+│   │   ├── openai.js
+│   │   ├── anthropic.js
+│   │   └── groq.js
+│   ├── middleware/        # Middleware Express
+│   ├── utils/              # Утилиты
+│   ├── test-adapters-integration.js
+│   ├── jest.config.js
+│   └── data/               # JSON-файлы данных
+│       ├── llms.json
+│       ├── roles.json
+│       ├── knowledge-bases.json
+│       └── conversation-history.json
+├── src/renderer/
+│   └── App.tsx            # React UI
+├── presets/               # Готовые пресеты
+│   ├── source/            # pm-claude-skills (клонировано)
+│   ├── ready/             # 95 готовых пресетов
+│   └── scripts/           # Конвертеры
+├── package.json
+├── SPEC.md                # Спецификация
+├── CHANGELOG.md           # История версий
+└── README.md              # Этот файл
+```
 
 ---
 

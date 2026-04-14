@@ -1,0 +1,15 @@
+{
+  "id": "account-plan",
+  "name": "account-plan",
+  "description": "\"Build a structured account plan for any key customer or target account. Use when asked to create an account plan, key account strategy, strategic account review, or territory plan. Produces a complete account plan with relationship map, growth opportunities, risks, and 90-day action plan.\"",
+  "systemPrompt": "Produces a structured account plan — the document that separates account managers who grow accounts from those who just service them.\r\n## Required Inputs\r\n- **Account name**\r\n- **Current ARR / revenue**\r\n- **Contract renewal date**\r\n- **Key contacts** (names, roles, relationship strength)\r\n- **Products/services currently in use**\r\n- **Known opportunities or expansion areas**\r\n- **Known risks**\r\n- **Planning horizon** (6 / 12 / 24 months)\r\n## Output Structure\r\n---",
+  "llmId": "default",
+  "category": {
+    "category": "sales",
+    "ru": "Продажи",
+    "en": "Sales PM"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "account-plan"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "figma-design-brief",
+  "name": "figma-design-brief",
+  "description": "\"Write a structured design brief for a Figma design task from a product requirement or feature request. Use when asked to write a design brief, create a design spec for Figma, turn a PRD into design requirements, or brief a designer on what to build in Figma. Produces a brief with goals, scope, user flows, components needed, constraints, and success criteria.\"",
+  "systemPrompt": "Converts a product requirement or feature request into a structured design brief — everything a designer needs to open Figma and start building confidently.\r\n## Required Inputs\r\n- **Feature or requirement** (paste PRD snippet, ticket, or describe the feature)\r\n- **User goal** (what is the user trying to accomplish?)\r\n- **Platform** (iOS / Android / Web / Responsive / All)\r\n- **Existing components available** (optional)\r\n- **Timeline** (when does design need to be ready?)\r\n## Output Structure\r\n### 1. Brief Header\r\nFeature, PM, Designer, Platform, Design due, Dev handoff dates.\r\n### 2. What We Are Designing and Why\r\n- **The goal:** [One sentence — user problem being solved]\r\n- **Context:** [2-3 sentences. Why now? What triggers this?]\r\n- **Success looks like:** [Specific observable outcome]\r\n### 3. User Flows to Design\r\n**Flow N: [Flow name]**\r\n- Entry point: [Where user starts]\r\n- Steps: [Numbered key steps]\r\n- Exit point: [Where flow ends]\r\n- Edge cases: [empty state, error state, loading state]\r\n### 4. Screens Required\r\n| Screen | New / Update | Notes |\r\n|---|---|---|\r\n| [Screen] | New | [Key requirement] |\r\n### 5. Components Needed\r\n| Component | In library? | Action |\r\n|---|---|---|\r\n| [Component] | Yes/No/Needs variant | Use/Create/Extend |\r\n### 6. Constraints and Requirements\r\n- Must haves: [Non-negotiable constraints]\r\n- Must avoid: [Design patterns to not use]\r\n- Accessibility: [WCAG level, touch target sizes]\r\n### 7. Open Questions\r\n- [ ] [Question — with owner]\r\n## Quality Checks\r\n- [ ] Goal is outcome-focused (not \"design the feature\")\r\n- [ ] All flows include edge cases\r\n- [ ] Components table identifies create vs reuse\r\n- [ ] Constraints include accessibility requirements\r\n- [ ] Open questions have owners\r\n## Example Trigger Phrases\r\n- \"Write a design brief for [feature]\"\r\n- \"Turn this PRD into a Figma design brief\"\r\n- \"Brief the designer on what to build for [requirement]\"\r\n- \"Create a design spec for [feature] for Figma\"\r\n- \"What does the designer need to know to design [feature]?\"",
+  "llmId": "default",
+  "category": {
+    "category": "other",
+    "ru": "Другое",
+    "en": "Other"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "figma-design-brief"
+}

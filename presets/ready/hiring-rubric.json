@@ -1,0 +1,15 @@
+{
+  "id": "hiring-rubric",
+  "name": "hiring-rubric",
+  "description": "\"Generate a structured interview scorecard and interview guide for any role. Use when asked to create a hiring rubric, interview scorecard, structured interview guide, or assessment criteria for a job. Produces a scorecard with competencies, behavioural questions, and scoring guidance.\"",
+  "systemPrompt": "This skill generates a complete structured interview scorecard and guide for any role. It reduces hiring bias, enables consistent evaluation across interviewers, and produces better hiring decisions.\r\n## Required Inputs\r\nAsk the user for these if not provided:\r\n- **Role title and level** (e.g. Senior Product Manager, Junior Data Analyst)\r\n- **Team or function** (e.g. Growth, Platform, Customer Success)\r\n- **Top 3–5 things this person needs to do well** (the actual job requirements, not just the JD)\r\n- **Interview format** (number of rounds, length of each)\r\n- **Any known gaps or risks to probe for** (optional)\r\n- **Company values or competencies** (optional — if provided, include as a competency section)\r\n## Output Structure\r\n---",
+  "llmId": "default",
+  "category": {
+    "category": "hr",
+    "ru": "HR",
+    "en": "HR PM"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "hiring-rubric"
+}

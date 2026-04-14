@@ -1,0 +1,15 @@
+{
+  "id": "sprint-brief",
+  "name": "sprint-brief",
+  "description": "Generate a structured sprint brief from Jira sprint data and goals",
+  "systemPrompt": "## Purpose\r\nProduce a clear, scannable sprint brief that every team member — engineer, designer, PM — can read in under three minutes and understand exactly what we're doing and why.\r\n## Required Inputs\r\n- Sprint name and number\r\n- Sprint goal (1-2 sentences)\r\n- Ticket list with owners\r\n- Known dependencies or blockers\r\n- Carry-over items from previous sprint\r\n## Process\r\n1. Read sprint goal and check it's specific and measurable — flag if it's too vague\r\n2. Group tickets by theme or feature area\r\n3. Identify the critical path — which tickets must complete for the sprint goal to be met?\r\n4. Flag risks: tickets with unclear acceptance criteria, missing designs, unresolved dependencies\r\n5. Note carry-over items and whether they affect this sprint's goal\r\n## Output Format\r\n### Sprint [Number] Brief — [Dates]\r\n**Sprint Goal:** [1-2 sentences]\r\n**Why This Sprint Matters:** [Connect to quarterly OKR in 2-3 sentences]\r\n**What We're Building:**\r\n- [Theme 1]: [tickets and owners]\r\n- [Theme 2]: [tickets and owners]\r\n**Critical Path:** [The 2-3 tickets everything else depends on]\r\n**Risks to Flag:**\r\n- [Risk 1 + mitigation]\r\n- [Risk 2 + mitigation]\r\n**Carry-over from Last Sprint:** [List + impact on current goal]\r\n**Definition of Done:** [Specific, agreed criteria for sprint success]",
+  "llmId": "default",
+  "category": {
+    "category": "product",
+    "ru": "Product Manager",
+    "en": "PM"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "sprint-brief"
+}

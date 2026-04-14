@@ -49,6 +49,8 @@ const LLM_TYPES = [
   { value: 'openai', label: 'OpenAI (GPT-5.4, GPT-5)' },
   { value: 'anthropic', label: 'Anthropic Claude (Opus 4.6, Sonnet 4.6)' },
   { value: 'google', label: 'Google Gemini (3.1 Pro, 2.5 Pro)' },
+  { value: 'groq', label: 'Groq (Llama 3.1, DeepSeek R1) - бесплатно' },
+  { value: 'uncloseai', label: 'UncloseAI (Hermes, Qwen) - бесплатно' },
   { value: 'ollama', label: 'Ollama (локальный)' },
   { value: 'lmstudio', label: 'LM Studio (локальный)' },
   { value: 'aya', label: 'Cohere Aya Expanse' },
@@ -91,6 +93,8 @@ function getTime() {
   const now = new Date()
   return now.toLocaleTimeString('ru-RU', { hour12: false })
 }
+
+const API_BASE = 'http://localhost:3001/api'
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('llm')
@@ -148,6 +152,22 @@ export default function App() {
           const controller = new AbortController()
           const timeout = setTimeout(() => controller.abort(), 3000)
           
+          if (llm.type === 'groq') {
+            setLlmStatus(prev => ({ ...prev, [llm.id]: 'online' }))
+            continue
+          }
+          if (llm.type === 'uncloseai') {
+            const endpoint = llm.endpoint || 'https://hermes.ai.unturf.com/v1'
+            try {
+              const res = await fetch(`${endpoint}/models`, { signal: controller.signal })
+              clearTimeout(timeout)
+              setLlmStatus(prev => ({ ...prev, [llm.id]: res.ok ? 'online' : 'offline' }))
+            } catch {
+              setLlmStatus(prev => ({ ...prev, [llm.id]: 'offline' }))
+            }
+            continue
+          }
+          
           const endpoint = llm.endpoint || (llm.type === 'ollama' ? 'http://localhost:11434' : 'http://localhost:1234')
           const url = llm.type === 'ollama' ? `${endpoint}/api/tags` : `${endpoint}/v1/models`
           
@@ -200,6 +220,14 @@ export default function App() {
       // Добавляем только новые роли
       for (const role of roles) {
         if (!backendRoleNames.includes(role.name)) {
+          // Отправляем полные данные KB включая content
+          const kbsToSync = role.knowledgeBases.map((kb: any) => ({
+            id: kb.id,
+            name: kb.name,
+            type: kb.type || 'file',
+            content: kb.content || '',
+            url: kb.url
+          }))
           await fetch(`${API_BASE}/roles`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -208,7 +236,8 @@ export default function App() {
               description: role.description,
               systemPrompt: role.systemPrompt,
               llmId: role.llmId,
-              knowledgeBases: role.knowledgeBases.map((kb: any) => kb.id)
+              llmName: role.llmName || llms.find(l => l.id === role.llmId)?.name || '',
+              knowledgeBases: kbsToSync
             })
           })
         }
@@ -222,6 +251,22 @@ export default function App() {
         try {
           const controller = new AbortController()
           const timeout = setTimeout(() => controller.abort(), 3000)
+          
+          if (llm.type === 'groq') {
+            setLlmStatus(prev => ({ ...prev, [llm.id]: 'online' }))
+            continue
+          }
+          if (llm.type === 'uncloseai') {
+            const endpoint = llm.endpoint || 'https://hermes.ai.unturf.com/v1'
+            try {
+              const res = await fetch(`${endpoint}/models`, { signal: controller.signal })
+              clearTimeout(timeout)
+              setLlmStatus(prev => ({ ...prev, [llm.id]: res.ok ? 'online' : 'offline' }))
+            } catch {
+              setLlmStatus(prev => ({ ...prev, [llm.id]: 'offline' }))
+            }
+            continue
+          }
           
           const endpoint = llm.endpoint || (llm.type === 'ollama' ? 'http://localhost:11434' : 'http://localhost:1234')
           const url = llm.type === 'ollama' ? `${endpoint}/api/tags` : `${endpoint}/v1/models`
@@ -693,7 +738,6 @@ export default function App() {
     addLog('СТОП', 'Агент остановлен')
   }
 
-  const API_BASE = 'http://localhost:3001/api'
 
   const callBackendChat = async (roleId: string, message: string): Promise<{response: string, documents: Document[], llm: string, subRole?: string | null}> => {
     // Сначала получаем роли из бэкенда чтобы найти правильный ID
@@ -773,11 +817,26 @@ export default function App() {
         fetch(`${API_BASE}/roles`),
         fetch(`${API_BASE}/knowledge-bases`)
       ])
-      const llms = await llmsRes.json()
-      const roles = await rolesRes.json()
+      const backendLlms = await llmsRes.json()
+      const backendRoles = await rolesRes.json()
       const kbs = await kbsRes.json()
       
-      const preset = { name: presetName.trim(), llms, roles, kbs }
+      // Формируем полные данные ролей с включением content из KB
+      const rolesWithKbContent = backendRoles.map((role: any) => ({
+        ...role,
+        knowledgeBases: (role.knowledgeBases || []).map((kb: any) => {
+          const fullKb = kbs.find((k: any) => k.id === kb.id || k.name === kb.name)
+          return fullKb ? {
+            id: fullKb.id,
+            name: fullKb.name,
+            type: fullKb.type || 'file',
+            content: fullKb.content || '',
+            url: fullKb.url
+          } : kb
+        })
+      }))
+      
+      const preset = { name: presetName.trim(), llms: backendLlms, roles: rolesWithKbContent, kbs }
       const newPresets = [...presets.filter(p => p.name !== preset.name), preset]
       setPresets(newPresets)
       save('nob_presets', newPresets)
@@ -792,14 +851,39 @@ export default function App() {
     if (!confirm(`Загрузить пресет "${preset.name}"? Текущие данные будут заменены.`)) return
     
     try {
+      // Сначала добавляем LLM
       for (const llm of preset.llms) {
         await fetch(`${API_BASE}/llms`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(llm) })
       }
-      for (const role of preset.roles) {
-        await fetch(`${API_BASE}/roles`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: role.name, description: role.description, systemPrompt: role.systemPrompt, llmId: role.llmId || '', llmName: role.llmName || '', knowledgeBases: role.knowledgeBases?.map((kb: any) => kb.id) || [] }) })
-      }
+      
+      // Затем добавляем базы знаний (чтобы при создании ролей они уже были)
       for (const kb of preset.kbs) {
-        await fetch(`${API_BASE}/knowledge-bases`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(kb) })
+        if (kb.content) {
+          await fetch(`${API_BASE}/knowledge-bases`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(kb) })
+        }
+      }
+      
+      // Потом добавляем роли с полными данными KB
+      for (const role of preset.roles) {
+        const kbsToSync = (role.knowledgeBases || []).map((kb: any) => ({
+          id: kb.id,
+          name: kb.name,
+          type: kb.type || 'file',
+          content: kb.content || '',
+          url: kb.url
+        }))
+        await fetch(`${API_BASE}/roles`, { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify({ 
+            name: role.name, 
+            description: role.description, 
+            systemPrompt: role.systemPrompt, 
+            llmId: role.llmId || '', 
+            llmName: role.llmName || '', 
+            knowledgeBases: kbsToSync
+          }) 
+        })
       }
       
       await syncWithBackend()
@@ -1017,11 +1101,16 @@ export default function App() {
               <button onClick={() => setShowAddLLMForm(true)} style={{ width: '100%', padding: 14, background: 'rgba(61,219,127,0.15)', border: '1px solid rgba(61,219,127,0.3)', borderRadius: 12, color: '#3ddb7f', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ Добавить LLM</button>
             ) : (
               <>
-                <button onClick={addPreset} style={{ width: '100%', padding: 10, background: 'rgba(61,219,127,0.15)', border: '1px solid rgba(61,219,127,0.3)', borderRadius: 10, color: '#3ddb7f', fontSize: 12, cursor: 'pointer', marginBottom: 12 }}>✨ Aya Expanse 8B</button>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+                  <button onClick={() => { setNewLLM({...newLLM, name: 'Groq Llama 3.3', type: 'groq', endpoint: '', apiKey: '' }) }} style={{ padding: 8, background: 'rgba(61,219,127,0.15)', border: '1px solid rgba(61,219,127,0.3)', borderRadius: 8, color: '#3ddb7f', fontSize: 11, cursor: 'pointer' }}>⚡ Groq</button>
+                  <button onClick={() => { setNewLLM({...newLLM, name: 'UncloseAI Hermes', type: 'uncloseai', endpoint: 'https://hermes.ai.unturf.com/v1', apiKey: '' }) }} style={{ padding: 8, background: 'rgba(100,149,237,0.15)', border: '1px solid rgba(100,149,237,0.3)', borderRadius: 8, color: '#6495ed', fontSize: 11, cursor: 'pointer' }}>🌐 Hermes</button>
+                  <button onClick={() => { setNewLLM({...newLLM, name: 'UncloseAI Qwen', type: 'uncloseai', endpoint: 'https://qwen.ai.unturf.com/v1', apiKey: '' }) }} style={{ padding: 8, background: 'rgba(255,140,0,0.15)', border: '1px solid rgba(255,140,0,0.3)', borderRadius: 8, color: '#ff8c00', fontSize: 11, cursor: 'pointer' }}>💻 Qwen</button>
+                  <button onClick={addPreset} style={{ padding: 8, background: 'rgba(61,219,127,0.15)', border: '1px solid rgba(61,219,127,0.3)', borderRadius: 8, color: '#3ddb7f', fontSize: 11, cursor: 'pointer' }}>✨ Aya 8B</button>
+                </div>
                 <div style={{ marginBottom: 10 }}><label style={{ display: 'block', fontSize: 11, opacity: 0.7, marginBottom: 6 }}>Название *</label><input value={newLLM.name} onChange={e => setNewLLM({...newLLM, name: e.target.value})} placeholder="GPT-4o" style={{ width: '100%', padding: 12, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: '#fff', fontSize: 14 }} /></div>
                 <div style={{ marginBottom: 16 }}><label style={{ display: 'block', fontSize: 11, opacity: 0.7, marginBottom: 6 }}>Тип *</label><select value={newLLM.type} onChange={e => setNewLLM({...newLLM, type: e.target.value})} style={{ width: '100%', padding: 12, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: '#fff', fontSize: 14 }}><option value="" style={{ color: '#888' }}>Выберите...</option>{LLM_TYPES.map(t => <option key={t.value} value={t.value} style={{ color: '#fff', background: '#003144' }}>{t.label}</option>)}</select></div>
-                {['ollama', 'lmstudio', 'custom', 'aya'].includes(newLLM.type) && <div style={{ marginBottom: 10 }}><label style={{ display: 'block', fontSize: 11, opacity: 0.7, marginBottom: 6 }}>Endpoint</label><input value={newLLM.endpoint} onChange={e => setNewLLM({...newLLM, endpoint: e.target.value})} placeholder="http://localhost:11434" style={{ width: '100%', padding: 12, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: '#fff', fontSize: 14 }} /></div>}
-                {!newLLM.type || !['ollama', 'lmstudio', 'custom', 'aya'].includes(newLLM.type) ? <div style={{ marginBottom: 16 }}><label style={{ display: 'block', fontSize: 11, opacity: 0.7, marginBottom: 6 }}>API Key</label><input type="password" value={newLLM.apiKey} onChange={e => setNewLLM({...newLLM, apiKey: e.target.value})} placeholder="sk-..." style={{ width: '100%', padding: 12, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: '#fff', fontSize: 14 }} /></div> : null}
+                {['ollama', 'lmstudio', 'custom', 'aya', 'groq', 'uncloseai'].includes(newLLM.type) && <div style={{ marginBottom: 10 }}><label style={{ display: 'block', fontSize: 11, opacity: 0.7, marginBottom: 6 }}>Endpoint {newLLM.type === 'groq' ? '(по умолч.)' : ''}</label><input value={newLLM.endpoint} onChange={e => setNewLLM({...newLLM, endpoint: e.target.value})} placeholder={newLLM.type === 'groq' ? 'https://api.groq.com/openai/v1' : newLLM.type === 'uncloseai' ? 'https://hermes.ai.unturf.com/v1' : 'http://localhost:1234'} style={{ width: '100%', padding: 12, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: '#fff', fontSize: 14 }} /></div>}
+                {newLLM.type && !['ollama', 'lmstudio', 'custom', 'aya', 'uncloseai'].includes(newLLM.type) && <div style={{ marginBottom: 16 }}><label style={{ display: 'block', fontSize: 11, opacity: 0.7, marginBottom: 6 }}>API Key {newLLM.type === 'groq' ? '(или оставь пустым, если в .env)' : ''}</label><input type="password" value={newLLM.apiKey} onChange={e => setNewLLM({...newLLM, apiKey: e.target.value})} placeholder={newLLM.type === 'groq' ? 'Не обязательно, если есть в .env' : 'Не обязательно - используется из .env'} style={{ width: '100%', padding: 12, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: '#fff', fontSize: 14 }} /></div>}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   <button onClick={addLLM} style={{ padding: 14, background: '#3ddb7f', border: 'none', borderRadius: 12, color: '#000', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Добавить</button>
                   <button onClick={() => { setShowAddLLMForm(false); setNewLLM({ name: '', type: '', apiKey: '', endpoint: '' }) }} style={{ padding: 14, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, color: '#fff', fontSize: 14, cursor: 'pointer' }}>Отмена</button>
@@ -1033,6 +1122,11 @@ export default function App() {
               <button onClick={exportData} style={{ padding: 10, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, color: '#fff', fontSize: 11, cursor: 'pointer' }}>📥 Эксп</button>
               <input type="file" onChange={importData} accept=".json" style={{ display: 'none' }} id="import-data" />
               <button onClick={() => document.getElementById('import-data')?.click()} style={{ padding: 10, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, color: '#fff', fontSize: 11, cursor: 'pointer' }}>📤 Импорт</button>
+            </div>
+            
+            <div style={{ marginTop: 16, padding: 10, background: 'rgba(61,219,127,0.1)', borderRadius: 8, fontSize: 10, opacity: 0.8 }}>
+              🔐 <b>Безопасность:</b> API ключи лучше хранить в файле <code>backend/.env</code> — они не попадут в браузер.
+              <br/>Например: <code>GROQ_API_KEY=gsk_...</code> или <code>OPENAI_API_KEY=sk-...</code>
             </div>
             
             <button onClick={() => { if(confirm('Удалить дубликаты в бэкенде?')) { cleanDuplicates() } }} style={{ width: '100%', marginTop: 8, padding: 8, background: 'rgba(244,67,54,0.2)', border: '1px solid rgba(244,67,54,0.4)', borderRadius: 8, color: '#f44336', fontSize: 11, cursor: 'pointer' }}>🗑 Удалить дубли</button>

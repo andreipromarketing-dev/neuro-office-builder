@@ -1,0 +1,15 @@
+{
+  "id": "budget-variance-analysis",
+  "name": "budget-variance-analysis",
+  "description": "\"Produce a structured budget variance analysis from actual vs budget figures. Use when asked to analyse budget variances, explain underspend or overspend, write a variance commentary, or investigate why actuals differ from plan. Produces a categorised variance table with root cause analysis and management commentary.\"",
+  "systemPrompt": "Produces a complete variance analysis from numbers through to root cause explanation and management commentary.\r\n## Required Inputs\r\n- **Actuals and budget figures** (paste as table or describe line by line)\r\n- **Period** (month / quarter / YTD)\r\n- **Materiality threshold** (e.g. £10k or 5%)\r\n- **Known reasons for variances** (if any)\r\n- **Audience** (CFO / board / management / auditor)\r\n## Output Structure\r\n### 1. Variance Summary Table\r\n| Line Item | Budget | Actual | Variance £ | Variance % | F/A |\r\n|---|---|---|---|---|---|\r\n| Revenue | | | | | |\r\n| Cost of Sales | | | | | |\r\n| Gross Profit | | | | | |\r\n| Opex | | | | | |\r\n| EBITDA | | | | | |\r\nF = Favourable | A = Adverse\r\n### 2. Material Variance Commentary\r\nFor each variance above threshold:\r\n**[Line item] — £[amount] F/A ([%])**\r\n- **Root cause:** [Specific explanation — not \"timing\" without detail]\r\n- **Permanent or timing?** Will this reverse next period?\r\n- **Management action:** What is being done\r\n- **Forecast impact:** Does this change full-year outlook?\r\n### 3. Top 3 Variances Requiring Attention\r\nRanked by materiality and strategic significance.\r\n### 4. Forecast Revision\r\nDoes the full-year forecast need updating? State revised expectation and key assumptions.\r\n### 5. Executive Summary\r\n3-4 sentences of management commentary suitable for a board pack.\r\n## Quality Checks\r\n- All variances above threshold explained\r\n- Root causes specific (not vague)\r\n- Favourable/Adverse correctly labelled\r\n- Forecast impact stated for material variances\r\n## Example Trigger Phrases\r\n- \"Write a variance analysis for these actuals vs budget: [paste]\"\r\n- \"Explain why we are over budget on [cost line]\"\r\n- \"Write the variance commentary for our finance review\"\r\n- \"Produce a budget vs actual analysis for Q[N]\"",
+  "llmId": "default",
+  "category": {
+    "category": "finance",
+    "ru": "Финансы",
+    "en": "Finance PM"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "budget-variance-analysis"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "research-protocol",
+  "name": "research-protocol",
+  "description": "\"Write a structured research protocol or study design document. Use when asked to write a research protocol, study protocol, research plan, methodology section, or research proposal. Produces a complete protocol with objectives, methodology, ethical considerations, and analysis plan.\"",
+  "systemPrompt": "Produces structured research protocols for academic, clinical, social science, or market research studies.\r\n## Required Inputs\r\n- **Research type** (clinical trial / observational / qualitative / systematic review / survey)\r\n- **Research question or hypothesis**\r\n- **Setting and population**\r\n- **Proposed methodology**\r\n- **Timeline**\r\n- **Funder or institution** (if applicable)\r\n## Output Structure\r\n---",
+  "llmId": "default",
+  "category": {
+    "category": "research",
+    "ru": "Медицина",
+    "en": "Research"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "research-protocol"
+}

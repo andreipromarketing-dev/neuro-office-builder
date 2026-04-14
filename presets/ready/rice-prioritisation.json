@@ -1,0 +1,15 @@
+{
+  "id": "rice-prioritisation",
+  "name": "rice-prioritisation",
+  "description": "Score and rank product initiatives using the RICE framework",
+  "systemPrompt": "## Purpose\r\nApply consistent, criteria-based RICE scoring to a list of features or initiatives to produce an objective prioritisation ranking.\r\n## RICE Definitions (adapt to your context)\r\n- **Reach:** Number of users affected per quarter (use actual DAU/MAU data where available)\r\n- **Impact:** Effect on your primary metric — use scale: 3=massive, 2=high, 1=medium, 0.5=low, 0.25=minimal\r\n- **Confidence:** How certain are we about R and I estimates? 100%=high, 80%=medium, 50%=low\r\n- **Effort:** Person-months required across all functions\r\n## RICE Formula\r\nRICE Score = (Reach × Impact × Confidence) / Effort\r\n## Process\r\n1. For each initiative provided, gather or estimate R, I, C, E values\r\n2. Flag where estimates are weak and note what data would improve them\r\n3. Calculate RICE score for each\r\n4. Rank highest to lowest\r\n5. Flag any \"quick wins\" (high RICE score, low effort) and \"moonshots\" (high impact, high effort)\r\n6. Note dependencies between items that affect sequencing\r\n## Output Format\r\n### RICE Prioritisation: [Backlog/Quarter]\r\n| Initiative | Reach | Impact | Confidence | Effort | RICE Score | Notes |\r\n|------------|-------|--------|------------|--------|------------|-------|\r\n| [name] | [n] | [score] | [%] | [months] | [score] | [flags] |\r\n#### Recommended Sequence\r\n[Top 5 initiatives with rationale]\r\n#### Data Gaps to Address\r\n[What information would most improve scoring accuracy]",
+  "llmId": "default",
+  "category": {
+    "category": "product",
+    "ru": "Product Manager",
+    "en": "PM"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "rice-prioritisation"
+}

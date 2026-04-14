@@ -9,8 +9,44 @@ import mammoth from 'mammoth';
 import pdf from 'pdf-parse';
 import XLSX from 'xlsx';
 import dotenv from 'dotenv';
+import { safeResolvePath, isSafeFile, isSafeDirectory } from './utils/pathSafety.js';
+import { validateString, validateEnum, validateUrl, validateSafePath, validateLLMType, requireFields, validateFileSize } from './middleware/validation.js';
+import { getAdapterFactory } from './llm-adapters/factory.js';
+import { getLLMCache } from './cache/llmCache.js';
 
 dotenv.config();
+
+// ==================== API KEYS FROM ENV ====================
+function getApiKey(llmType, llmApiKey) {
+  // Если ключ передан прямо в LLM - используем его
+  if (llmApiKey) return llmApiKey;
+  
+  // Иначе ищем в .env
+  switch (llmType) {
+    case 'openai': return process.env.OPENAI_API_KEY;
+    case 'anthropic': return process.env.ANTHROPIC_API_KEY;
+    case 'google': return process.env.GOOGLE_API_KEY;
+    case 'groq': return process.env.GROQ_API_KEY;
+    default: return null;
+  }
+}
+
+function getEndpoint(llmType, llmEndpoint) {
+  if (llmEndpoint) return llmEndpoint;
+  
+  switch (llmType) {
+    case 'ollama': return process.env.OLLAMA_ENDPOINT || 'http://localhost:11434';
+    case 'lmstudio':
+    case 'aya':
+    case 'llama':
+    case 'mistral':
+    case 'deepseek':
+    case 'qwen':
+    case 'grok':
+      return process.env.LMSTUDIO_ENDPOINT || 'http://localhost:1234';
+    default: return null;
+  }
+}
 
 // Импорт модулей оркестрации (могут быть отключены)
 import { setRoles, setDocuments, delegate } from './delegate.js';
@@ -31,6 +67,7 @@ let roles = [];
 let knowledgeBases = [];
 let documents = [];
 let conversationHistory = [];
+let orchestrationEnabled = false;
 
 // ==================== ИСТОРИЯ ЧАТА С ДИСКОМ ====================
 const HISTORY_FILE = join(__dirname, 'data', 'conversation-history.json');
@@ -68,18 +105,24 @@ loadHistory();
 
 // ==================== ПОДДЕРЖКА ФАЙЛОВ PDF, DOCX, XLSX ====================
 async function parseFile(filePath) {
+  const safePath = safeResolvePath(filePath);
+  if (!safePath || !isSafeFile(safePath)) {
+    console.error(`[SECURITY] Небезопасный путь к файлу: ${filePath}`);
+    return null;
+  }
+
   const ext = filePath.toLowerCase().split('.').pop();
-  
+
   try {
     if (ext === 'docx' || ext === 'doc') {
-      const result = await mammoth.extractRawText({ path: filePath });
+      const result = await mammoth.extractRawText({ path: safePath });
       return result.value;
     } else if (ext === 'pdf') {
-      const dataBuffer = fs.readFileSync(filePath);
+      const dataBuffer = fs.readFileSync(safePath);
       const data = await pdf(dataBuffer);
       return data.text;
     } else if (ext === 'xlsx' || ext === 'xls') {
-      const workbook = XLSX.readFile(filePath);
+      const workbook = XLSX.readFile(safePath);
       let text = '';
       workbook.SheetNames.forEach(sheetName => {
         const sheet = workbook.Sheets[sheetName];
@@ -87,7 +130,7 @@ async function parseFile(filePath) {
       });
       return text;
     } else if (ext === 'txt' || ext === 'md') {
-      return fs.readFileSync(filePath, 'utf-8');
+      return fs.readFileSync(safePath, 'utf-8');
     }
     return null;
   } catch (e) {
@@ -124,9 +167,15 @@ async function parseFileFromContent(filename, content, mimeType) {
 
 // ==================== ИНДЕКСАЦИЯ ПАПОК ====================
 async function scanFolder(folderPath, roleId = '') {
+  const safePath = safeResolvePath(folderPath);
+  if (!safePath || !isSafeDirectory(safePath)) {
+    console.error(`[SECURITY] Небезопасный путь к папке: ${folderPath}`);
+    return [];
+  }
+
   const supportedExts = ['.txt', '.md', '.pdf', '.docx', '.doc', '.xlsx', '.xls', '.csv'];
   const results = [];
-  
+
   function walkDir(dir) {
     try {
       const items = fs.readdirSync(dir);
@@ -146,11 +195,8 @@ async function scanFolder(folderPath, roleId = '') {
       console.error(`[ПАПКА] Ошибка сканирования ${dir}:`, e.message);
     }
   }
-  
-  if (fs.existsSync(folderPath)) {
-    walkDir(folderPath);
-  }
-  
+
+  walkDir(safePath);
   return results;
 }
 
@@ -199,7 +245,13 @@ app.get('/api/llms', (req, res) => {
 });
 
 // Добавить LLM
-app.post('/api/llms', (req, res) => {
+app.post('/api/llms', [
+  requireFields(['name', 'type']),
+  validateString('name', 100),
+  validateLLMType,
+  validateString('apiKey', 500),
+  validateUrl('endpoint')
+], (req, res) => {
   const { name, type, apiKey, endpoint } = req.body;
   const llm = { id: uuidv4(), name, type, apiKey, endpoint, createdAt: new Date().toISOString() };
   llms.push(llm);
@@ -219,14 +271,22 @@ app.get('/api/roles', (req, res) => {
   res.json(roles);
 });
 
-app.post('/api/roles', (req, res) => {
+app.post('/api/roles', [
+  requireFields(['name', 'systemPrompt', 'llmId']),
+  validateString('name', 100),
+  validateString('description', 500),
+  validateString('systemPrompt', 10000),
+  validateString('llmId', 100),
+  validateString('llmName', 100)
+], (req, res) => {
   const { name, description, systemPrompt, llmId, llmName, knowledgeBases: kbs } = req.body;
   
   // Если пришли полные KB - сохраняем их
   const savedKbs = []
   if (kbs && Array.isArray(kbs)) {
     for (const kb of kbs) {
-      if (kb.id && kb.name && kb.content) {
+      // Сохраняем если есть id, name и content не undefined
+      if (kb.id && kb.name && kb.content !== undefined) {
         // Проверяем, есть ли уже такая KB
         let existing = knowledgeBases.find(k => k.name === kb.name)
         if (!existing) {
@@ -234,7 +294,7 @@ app.post('/api/roles', (req, res) => {
             id: kb.id || uuidv4(), 
             name: kb.name, 
             type: kb.type || 'file', 
-            content: kb.content, 
+            content: kb.content || '', 
             url: kb.url,
             createdAt: new Date().toISOString() 
           }
@@ -311,13 +371,12 @@ app.delete('/api/knowledge-bases/:id', (req, res) => {
 });
 
 // ==================== API: ИНДЕКСАЦИЯ ПАПОК ====================
-app.post('/api/folders/scan', async (req, res) => {
+app.post('/api/folders/scan', [
+  requireFields(['folderPath']),
+  validateSafePath('folderPath')
+], async (req, res) => {
   const { folderPath, roleId = '' } = req.body;
-  
-  if (!folderPath) {
-    return res.status(400).json({ error: 'Укажите путь к папке' });
-  }
-  
+
   const files = await scanFolder(folderPath, roleId);
   const results = [];
   
@@ -443,15 +502,12 @@ app.post('/api/chat', async (req, res) => {
     console.log(`[ОРКЕСТРАЦИЯ] -> ${targetRole.name}`);
     const targetLlm = llms.find(l => l.name === targetRole.llmName);
     if (targetLlm) {
+      const targetEndpoint = getEndpoint(targetLlm.type, targetLlm.endpoint);
       const targetMsgs = [
         { role: 'system', content: targetRole.systemPrompt },
         { role: 'user', content: message + '\n\nКонтекст из базы знаний:\n' + relevantDocs.map(d => d.snippet).join('\n') }
       ];
-      if (targetLlm.type === 'aya' || targetLlm.type === 'lmstudio') {
-        subResponse = await callLMStudio(targetLlm.endpoint || 'http://localhost:1234', targetMsgs);
-      } else if (targetLlm.type === 'ollama') {
-        subResponse = await callOllama(targetLlm.endpoint || 'http://localhost:11434', targetMsgs);
-      }
+      subResponse = await callLLMByConfig(targetLlm, targetMsgs);
       subRoleName = targetRole.name;
     }
   }
@@ -507,21 +563,10 @@ app.post('/api/chat', async (req, res) => {
 
   try {
     let response;
+    const apiKey = getApiKey(llm.type, llm.apiKey);
+    const endpoint = getEndpoint(llm.type, llm.endpoint);
     
-    if (llm.type === 'ollama') {
-      response = await callOllama(llm.endpoint || 'http://localhost:11434', messages);
-    } else if (llm.type === 'lmstudio' || llm.type === 'aya' || llm.type === 'llama' || llm.type === 'mistral' || llm.type === 'deepseek' || llm.type === 'qwen' || llm.type === 'grok') {
-      response = await callLMStudio(llm.endpoint || 'http://localhost:1234', messages);
-    } else if (llm.type === 'openai') {
-      response = await callOpenAI(llm.apiKey, messages, llm.endpoint);
-    } else if (llm.type === 'anthropic') {
-      response = await callAnthropic(llm.apiKey, messages);
-    } else if (llm.type === 'google') {
-      response = await callOpenAI(llm.apiKey, messages, llm.endpoint || 'https://generativelanguage.googleapis.com/v1');
-    } else {
-      // Fallback - LM Studio compatible
-      response = await callLMStudio(llm.endpoint || 'http://localhost:1234', messages);
-    }
+    response = await callLLMByConfig(llm, messages);
 
     // ОРКЕСТРАЦИЯ: проверяем есть ли вызовы других ролей
     const calls = response.match(/\[CALL:([^:]+):([^\]]+)\]/g);
@@ -546,12 +591,7 @@ app.post('/api/chat', async (req, res) => {
                 { role: 'user', content: targetMessage }
               ];
               
-              let targetResponse;
-              if (targetLlm.type === 'aya' || targetLlm.type === 'lmstudio') {
-                targetResponse = await callLMStudio(targetLlm.endpoint || 'http://localhost:1234', targetMessages);
-              } else if (targetLlm.type === 'ollama') {
-                targetResponse = await callOllama(targetLlm.endpoint || 'http://localhost:11434', targetMessages);
-              }
+              const targetResponse = await callLLMByConfig(targetLlm, targetMessages);
               
               // Заменяем маркер на результат
               response = response.replace(call, `\n\n[Ответ от ${targetRoleName}]:\n${targetResponse}\n`);
@@ -598,6 +638,23 @@ app.post('/api/chat', async (req, res) => {
 
 // Таймаут для запросов (120 секунд)
 const LLM_TIMEOUT = 120 * 1000;
+
+// Retry логика для LLM вызовов
+async function withRetry(fn, maxRetries = 3, delay = 2000) {
+  let lastError;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      lastError = e;
+      console.log(`[RETRY] Попытка ${i + 1}/${maxRetries}: ${e.message}`);
+      if (i < maxRetries - 1) {
+        await new Promise(r => setTimeout(r, delay * (i + 1)));
+      }
+    }
+  }
+  throw lastError;
+}
 
 async function fetchWithTimeout(url, options, timeout = LLM_TIMEOUT) {
   const controller = new AbortController();
@@ -699,6 +756,53 @@ async function callAnthropic(apiKey, messages) {
   return data.content?.[0]?.text || 'Пустой ответ';
 }
 
+async function callGroq(apiKey, messages, endpoint) {
+  return await withRetry(async () => {
+    const response = await fetchWithTimeout(endpoint || 'https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages,
+        temperature: 0.7
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Groq error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || 'Пустой ответ';
+  });
+}
+
+async function callUncloseAI(endpoint, messages) {
+  return await withRetry(async () => {
+    const response = await fetchWithTimeout(endpoint || 'https://hermes.ai.unturf.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'hermes-3-llama-3.1-405b',
+        messages,
+        temperature: 0.7
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`UncloseAI error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || 'Пустой ответ';
+  });
+}
+
 // ==================== LLM WRAPPER ====================
 
 async function callLLM(llmName, messages) {
@@ -706,11 +810,15 @@ async function callLLM(llmName, messages) {
   if (!llm) {
     throw new Error(`LLM не найден: ${llmName}`);
   }
-  
+
   if (llm.type === 'ollama') {
     return await callOllama(llm.endpoint || 'http://localhost:11434', messages);
   } else if (llm.type === 'lmstudio' || llm.type === 'aya' || llm.type === 'llama' || llm.type === 'mistral' || llm.type === 'deepseek' || llm.type === 'qwen' || llm.type === 'grok') {
     return await callLMStudio(llm.endpoint || 'http://localhost:1234', messages);
+  } else if (llm.type === 'groq') {
+    return await callGroq(llm.apiKey, messages, llm.endpoint);
+  } else if (llm.type === 'uncloseai') {
+    return await callUncloseAI(llm.endpoint, messages);
   } else if (llm.type === 'openai') {
     return await callOpenAI(llm.apiKey, messages, llm.endpoint);
   } else if (llm.type === 'anthropic') {
@@ -720,11 +828,144 @@ async function callLLM(llmName, messages) {
   }
 }
 
+/**
+ * Новая версия callLLM с использованием адаптеров и кэша
+ */
+async function callLLMNew(llmName, messages) {
+  const llm = llms.find(l => l.name === llmName);
+  if (!llm) {
+    throw new Error(`LLM не найден: ${llmName}`);
+  }
+
+  // Получаем фабрику адаптеров и кэш
+  const adapterFactory = getAdapterFactory();
+  const cache = getLLMCache();
+
+  // Проверяем кэш
+  const cachedResponse = cache.get(llmName, messages);
+  if (cachedResponse) {
+    console.log(`[CACHE HIT] ${llmName}: ${messages.length} сообщений`);
+    return cachedResponse;
+  }
+
+  // Получаем адаптер для типа LLM
+  let adapter;
+  try {
+    adapter = adapterFactory.getAdapter(llm.type);
+  } catch (error) {
+    console.warn(`[LLM ADAPTER] Адаптер для типа ${llm.type} не найден, используем fallback`);
+    // Fallback на старую функцию
+    return await callLLM(llmName, messages);
+  }
+
+  // Подготавливаем конфигурацию
+  const config = {
+    apiKey: getApiKey(llm.type, llm.apiKey),
+    endpoint: getEndpoint(llm.type, llm.endpoint),
+    model: llm.model
+  };
+
+  try {
+    // Вызываем LLM через адаптер
+    const response = await adapter.call(messages, config);
+
+    // Сохраняем в кэш
+    cache.set(llmName, messages, response);
+    console.log(`[LLM ADAPTER] ${llm.type} → ${llmName}: ответ получен (${response.length} chars)`);
+
+    return response;
+  } catch (error) {
+    console.error(`[LLM ADAPTER] Ошибка адаптера ${llm.type}:`, error.message);
+    // Fallback на старую реализацию
+    return await callLLM(llmName, messages);
+  }
+}
+
+/**
+ * Вызывает LLM по конфигурации объекта llm (использует новую систему адаптеров)
+ */
+async function callLLMByConfig(llm, messages) {
+  if (!llm || !llm.type) {
+    throw new Error('Некорректная конфигурация LLM');
+  }
+
+  // Получаем фабрику адаптеров и кэш
+  const adapterFactory = getAdapterFactory();
+  const cache = getLLMCache();
+
+  // Генерируем уникальный ключ для кэша (используем имя LLM если есть, иначе комбинацию параметров)
+  const llmKey = llm.name || `${llm.type}:${llm.endpoint || 'default'}`;
+
+  // Проверяем кэш
+  const cachedResponse = cache.get(llmKey, messages);
+  if (cachedResponse) {
+    console.log(`[CACHE HIT] ${llmKey}: ${messages.length} сообщений`);
+    return cachedResponse;
+  }
+
+  // Получаем адаптер для типа LLM
+  let adapter;
+  try {
+    adapter = adapterFactory.getAdapter(llm.type);
+  } catch (error) {
+    console.warn(`[LLM ADAPTER] Адаптер для типа ${llm.type} не найден, используем fallback`);
+    // Fallback на старую логику вызовов
+    return await callLLMDirect(llm, messages);
+  }
+
+  // Подготавливаем конфигурацию
+  const config = {
+    apiKey: getApiKey(llm.type, llm.apiKey),
+    endpoint: getEndpoint(llm.type, llm.endpoint),
+    model: llm.model
+  };
+
+  try {
+    // Вызываем LLM через адаптер
+    const response = await adapter.call(messages, config);
+
+    // Сохраняем в кэш
+    cache.set(llmKey, messages, response);
+    console.log(`[LLM ADAPTER] ${llm.type} → ${llmKey}: ответ получен (${response.length} chars)`);
+
+    return response;
+  } catch (error) {
+    console.error(`[LLM ADAPTER] Ошибка адаптера ${llm.type}:`, error.message);
+    // Fallback на старую реализацию
+    return await callLLMDirect(llm, messages);
+  }
+}
+
+/**
+ * Прямой вызов LLM без адаптеров (fallback функция)
+ */
+async function callLLMDirect(llm, messages) {
+  const apiKey = getApiKey(llm.type, llm.apiKey);
+  const endpoint = getEndpoint(llm.type, llm.endpoint);
+
+  if (llm.type === 'ollama') {
+    return await callOllama(endpoint, messages);
+  } else if (llm.type === 'lmstudio' || llm.type === 'aya' || llm.type === 'llama' || llm.type === 'mistral' || llm.type === 'deepseek' || llm.type === 'qwen' || llm.type === 'grok') {
+    return await callLMStudio(endpoint, messages);
+  } else if (llm.type === 'groq') {
+    return await callGroq(apiKey, messages, endpoint);
+  } else if (llm.type === 'uncloseai') {
+    return await callUncloseAI(endpoint, messages);
+  } else if (llm.type === 'openai') {
+    return await callOpenAI(apiKey, messages, endpoint);
+  } else if (llm.type === 'anthropic') {
+    return await callAnthropic(apiKey, messages);
+  } else if (llm.type === 'google') {
+    return await callOpenAI(apiKey, messages, endpoint || 'https://generativelanguage.googleapis.com/v1');
+  } else {
+    return await callLMStudio(endpoint, messages);
+  }
+}
+
 // ==================== API: DELEGATE (ОТКЛЮЧЕНО) ====================
 // Раскомментируй для включения
 // ==================== ОРКЕСТРАЦИЯ ====================
 // Глобальная настройка - включить/выключить оркестрацию
-let orchestrationEnabled = false;
 
 app.get('/api/orchestration/status', (req, res) => {
   res.json({ enabled: orchestrationEnabled });
@@ -772,6 +1013,24 @@ app.get('/api/status', (req, res) => {
     documents: documents.length,
     uptime: process.uptime()
   });
+});
+
+// ==================== API: ИСТОРИЯ ЧАТА ====================
+
+app.get('/api/chat-history/:roleId', (req, res) => {
+  const { roleId } = req.params;
+  const limit = parseInt(req.query.limit) || 20;
+  const history = conversationHistory
+    .filter(h => h.roleId === roleId)
+    .slice(-limit);
+  res.json(history);
+});
+
+app.delete('/api/chat-history/:roleId', (req, res) => {
+  const { roleId } = req.params;
+  conversationHistory = conversationHistory.filter(h => h.roleId !== roleId);
+  saveHistory();
+  res.json({ success: true });
 });
 
 // ==================== ЗАГРУЗКА ДАННЫХ ====================
@@ -830,17 +1089,23 @@ setInterval(saveData, 30000);
 
 loadData();
 
-app.listen(PORT, () => {
-  console.log(`\n🚀 NeuroOffice Backend запущен на http://localhost:${PORT}`);
-  console.log(`📊 LLM: ${llms.length} | Роли: ${roles.length} | Базы: ${knowledgeBases.length}`);
-  console.log(`\nAPI Endpoints:`);
-  console.log(`  GET  /api/status    - Статус системы`);
-  console.log(`  GET  /api/llms     - Список LLM`);
-  console.log(`  POST /api/llms     - Добавить LLM`);
-  console.log(`  GET  /api/roles    - Список ролей`);
-  console.log(`  POST /api/roles   - Создать роль`);
-  console.log(`  POST /api/chat    - Отправить сообщение`);
-  console.log(`  POST /api/rag/search - Поиск по документам\n`);
-});
+// Запускаем сервер только если файл запущен напрямую, а не импортирован
+if (import.meta.url === `file://${process.argv[1]}`) {
+  app.listen(PORT, () => {
+    console.log(`\n🚀 NeuroOffice Backend запущен на http://localhost:${PORT}`);
+    console.log(`📊 LLM: ${llms.length} | Роли: ${roles.length} | Базы: ${knowledgeBases.length}`);
+    console.log(`\nAPI Endpoints:`);
+    console.log(`  GET  /api/status    - Статус системы`);
+    console.log(`  GET  /api/llms     - Список LLM`);
+    console.log(`  POST /api/llms     - Добавить LLM`);
+    console.log(`  GET  /api/roles    - Список ролей`);
+    console.log(`  POST /api/roles   - Создать роль`);
+    console.log(`  POST /api/chat    - Отправить сообщение`);
+    console.log(`  POST /api/rag/search - Поиск по документам\n`);
+  });
+}
+
+// Экспорт функций для тестирования
+export { parseFile, parseFileFromContent, scanFolder, searchDocuments, rebuildSearchIndex };
 
 export default app;

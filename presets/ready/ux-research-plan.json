@@ -1,0 +1,15 @@
+{
+  "id": "ux-research-plan",
+  "name": "ux-research-plan",
+  "description": "\"Create a structured UX research plan for any product question or feature. Use when asked to write a research plan, design a user study, create a discussion guide, write screener questions, or plan usability testing. Produces a full research plan with objectives, methodology, screener, discussion guide, and synthesis framework.\"",
+  "systemPrompt": "This skill creates a complete, ready-to-execute UX research plan. Output covers everything from research objectives to screener questions, discussion guide, and synthesis framework.\r\n## Required Inputs\r\nAsk the user for these if not provided:\r\n- **Research question** (what decision will this research inform?)\r\n- **Product area or feature** being researched\r\n- **Research type** (Generative / Evaluative / Usability testing / Diary study / Survey)\r\n- **Stage** (Discovery / Concept validation / Prototype testing / Live product)\r\n- **Target participants** (role, demographics, behaviour — who should we talk to?)\r\n- **Timeline and number of sessions**\r\n- **Existing assumptions or hypotheses** (optional but valuable)\r\n## Output Structure\r\n---",
+  "llmId": "default",
+  "category": {
+    "category": "design",
+    "ru": "Дизайн",
+    "en": "Design PM"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "ux-research-plan"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "architecture-decision-record",
+  "name": "architecture-decision-record",
+  "description": "\"Create an Architecture Decision Record (ADR) for any technical decision. Use when asked to document a technical decision, write an ADR, record an architecture choice, or capture why a technology or approach was selected. Produces a structured ADR with context, decision, consequences, and tradeoffs.\"",
+  "systemPrompt": "This skill produces a complete Architecture Decision Record (ADR) following the Nygard format — the most widely adopted standard. ADRs document the reasoning behind significant technical decisions so future team members understand not just *what* was decided, but *why*.\r\n## Required Inputs\r\nAsk the user for these if not provided:\r\n- **Decision title** (brief, e.g. \"Use PostgreSQL as primary datastore\")\r\n- **Context** (what situation led to this decision needing to be made?)\r\n- **Options considered** (at least 2; if only 1 is given, prompt for alternatives that were considered or ruled out)\r\n- **Decision made** (which option was chosen)\r\n- **Reason for choice**\r\n- **Status** (Proposed / Accepted / Deprecated / Superseded)\r\n- **Author and date**\r\n## Output Structure\r\n---",
+  "llmId": "default",
+  "category": {
+    "category": "engineering",
+    "ru": "Инженер",
+    "en": "Engineering"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "architecture-decision-record"
+}

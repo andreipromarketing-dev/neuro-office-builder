@@ -1,0 +1,15 @@
+{
+  "id": "incident-postmortem",
+  "name": "incident-postmortem",
+  "description": "\"Write a structured incident postmortem or post-incident review. Use when asked to write a postmortem, incident report, P1/P2 review, outage report, or RCA (root cause analysis). Generates a blameless postmortem with timeline, root cause, contributing factors, impact summary, and action items.\"",
+  "systemPrompt": "This skill produces a complete, blameless incident postmortem document following industry-standard format. Output is ready to share with engineering teams, leadership, and affected stakeholders.\r\n## Required Inputs\r\nAsk the user for these if not provided:\r\n- **Incident title / ID**\r\n- **Severity** (P1 / P2 / P3 or SEV1 / SEV2 / SEV3)\r\n- **Date and duration** of the incident\r\n- **What happened** (rough notes are fine — the skill will structure them)\r\n- **Services or systems affected**\r\n- **Customer impact** (how many users, what was degraded)\r\n- **How it was detected**\r\n- **How it was resolved**\r\n- **Initial thoughts on root cause**\r\n- **Action items already identified** (optional)\r\n## Output Structure\r\n---",
+  "llmId": "default",
+  "category": {
+    "category": "engineering",
+    "ru": "Инженер",
+    "en": "Engineering"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "incident-postmortem"
+}

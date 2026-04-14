@@ -1,0 +1,15 @@
+{
+  "id": "dashboard-brief",
+  "name": "dashboard-brief",
+  "description": "\"Convert a business question into a complete dashboard specification. Use when asked to design a dashboard, create a dashboard spec or brief, plan a BI report, or define what charts and metrics a dashboard should include. Produces a structured spec with metrics, dimensions, chart types, filters, and layout guidance.\"",
+  "systemPrompt": "This skill converts a business question or monitoring need into a complete, implementation-ready dashboard specification. The output gives a data engineer or BI developer everything they need to build without a follow-up meeting.\r\n## Required Inputs\r\nAsk the user for these if not provided:\r\n- **The business question this dashboard should answer** (e.g. \"How is our activation funnel performing this week?\")\r\n- **Primary audience** (exec / product team / operations / customer success / engineering)\r\n- **Refresh cadence** (real-time / hourly / daily / weekly)\r\n- **Data sources available** (e.g. Postgres, BigQuery, Mixpanel, Salesforce, Jira)\r\n- **BI tool being used** (Looker / Metabase / Tableau / Power BI / Grafana / Custom / Unknown)\r\n## Output Structure\r\n---",
+  "llmId": "default",
+  "category": {
+    "category": "other",
+    "ru": "Другое",
+    "en": "Other"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "dashboard-brief"
+}

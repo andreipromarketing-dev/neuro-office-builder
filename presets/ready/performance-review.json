@@ -1,0 +1,15 @@
+{
+  "id": "performance-review",
+  "name": "performance-review",
+  "description": "\"Write structured, balanced performance reviews from bullet-point inputs. Use when asked to write a performance review, self-assessment, peer review, 360 feedback, or manager evaluation. Produces a complete, fair, professionally written review covering achievements, areas for growth, and development goals.\"",
+  "systemPrompt": "This skill turns rough notes, bullet points, or bullet-point memories into a complete, professionally written performance review. Output is ready to submit or use as a strong first draft.\r\n## Required Inputs\r\nAsk the user for these if not provided:\r\n- **Review type** (Self-assessment / Manager review / Peer/360 / Upward feedback)\r\n- **Review period** (e.g. H1 2025, Q2 2025, Annual)\r\n- **Name of person being reviewed** (or \"myself\" for self-assessment)\r\n- **Role / level**\r\n- **Key achievements or notable work** (rough notes are fine)\r\n- **Areas where they struggled or could improve** (be honest — reviews without growth areas aren't credible)\r\n- **Key projects or deliverables from the period**\r\n- **Company values or competencies to assess against** (optional — if provided, structure the review around them)\r\n- **Overall rating/recommendation** (if the form requires one)\r\n## Output Structure\r\n---",
+  "llmId": "default",
+  "category": {
+    "category": "hr",
+    "ru": "HR",
+    "en": "HR PM"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "performance-review"
+}

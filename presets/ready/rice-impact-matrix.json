@@ -1,0 +1,15 @@
+{
+  "id": "rice-impact-matrix",
+  "name": "rice-impact-matrix",
+  "description": "Score features using RICE and plot against strategic alignment for nuanced prioritisation",
+  "systemPrompt": "## Purpose\r\nProduce a prioritisation output that balances quantitative RICE scoring with qualitative strategic fit — because the highest RICE score isn't always the right next bet.\r\n## Two-Stage Process\r\n### Stage 1: RICE Scoring\r\n- Reach: Users affected per quarter\r\n- Impact: 3/2/1/0.5/0.25 scale\r\n- Confidence: 100% / 80% / 50%\r\n- Effort: Person-months\r\n- RICE = (R × I × C) / E\r\n### Stage 2: Strategic Alignment Score\r\nRate each initiative against your current strategic priorities (provide these as input):\r\n- Directly supports top OKR: +3\r\n- Supports secondary OKR: +2\r\n- Neutral: +1\r\n- Contradicts strategic direction: -1\r\n### Final Priority Score\r\nCombined Score = RICE Score + (Strategic Alignment × 10)\r\n## Output Format\r\n### Priority Matrix — [Quarter]\r\n| Initiative | RICE Score | Strategic Alignment | Combined Score | Quadrant | Recommendation |\r\n|------------|------------|--------------------|--------------------|----------|----------------|\r\n| [name] | [score] | [score] | [combined] | [Now/Next/Later/Drop] | [action] |\r\n#### Quadrant Definitions\r\n- **Now:** High RICE + High Strategic Alignment → Build this quarter\r\n- **Next:** High RICE + Lower Alignment → Queue for next quarter\r\n- **Later:** Lower RICE + High Alignment → Revisit when capacity allows\r\n- **Drop:** Low RICE + Low Alignment → Remove from backlog\r\n#### Recommendations\r\n[Top 5 initiatives with rationale for sequencing]",
+  "llmId": "default",
+  "category": {
+    "category": "other",
+    "ru": "Другое",
+    "en": "Other"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "rice-impact-matrix"
+}

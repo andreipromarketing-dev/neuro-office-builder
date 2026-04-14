@@ -1,0 +1,15 @@
+{
+  "id": "figma-component-audit",
+  "name": "figma-component-audit",
+  "description": "\"Audit a Figma component library for consistency, coverage gaps, and naming issues. Use when asked to audit components, review a design system, check component consistency, identify missing components, or assess Figma library health. Produces a structured audit report with issues prioritised by impact, naming recommendations, and a fix plan.\"",
+  "systemPrompt": "Produces a structured audit of a Figma component library — identifying inconsistencies, naming problems, coverage gaps, and prioritised recommendations.\r\n## Required Inputs\r\n- **Component list or description** (paste component names or describe what exists)\r\n- **Product type** (mobile app / web app / desktop / multi-platform)\r\n- **Design system maturity** (new / growing / mature / legacy)\r\n- **Primary concern** (optional)\r\n## Output Structure\r\n### 1. Audit Summary\r\n| Dimension | Status | Score |\r\n|---|---|---|\r\n| Naming consistency | Red/Amber/Green | /10 |\r\n| Component coverage | | /10 |\r\n| Variant completeness | | /10 |\r\n| Documentation | | /10 |\r\n| Overall health | | /10 |\r\n**Verdict:** What is the state of this library and the single most important thing to fix?\r\n### 2. Naming Issues\r\nFor each problem:\r\n**Issue: [Problem type]**\r\n- What is happening: [Specific examples]\r\n- Why it matters: [Impact on designers and developers]\r\n- Fix: [Exact naming convention to adopt]\r\n- Examples: Before / After\r\nNaming convention to enforce:\r\n- Components: PascalCase (NavigationBar)\r\n- Variants: Lowercase with slashes (size/large, state/hover)\r\n- Pages: All caps (COMPONENTS, FOUNDATIONS)\r\n### 3. Coverage Gaps\r\n| Missing Component | Priority | Why Needed |\r\n|---|---|---|\r\n| [Component] | High/Medium/Low | [Use case] |\r\n### 4. Variant Completeness Check\r\n| Component | Default | Hover | Active | Disabled | Error | Missing |\r\n|---|---|---|---|---|---|---|\r\n| [Button] | Yes | Yes | No | Yes | No | Active, Error |\r\n### 5. Prioritised Fix Plan\r\n| # | Fix | Effort | Impact | Do First? |\r\n|---|---|---|---|---|\r\n| 1 | [Fix] | Low/Med/High | High | Yes |\r\n## Quality Checks\r\n- [ ] Naming recommendations have before/after examples\r\n- [ ] Coverage gaps are relevant to the product type\r\n- [ ] Fix plan is ordered by impact-to-effort ratio\r\n- [ ] Variant completeness covers all interactive states\r\n## Example Trigger Phrases\r\n- \"Audit my Figma component library\"\r\n- \"Review our design system for consistency issues\"\r\n- \"What components are we missing in our Figma library?\"\r\n- \"Our component naming is a mess — help me fix it\"\r\n- \"Do a health check on our Figma components\"",
+  "llmId": "default",
+  "category": {
+    "category": "other",
+    "ru": "Другое",
+    "en": "Other"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "figma-component-audit"
+}

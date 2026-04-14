@@ -1,0 +1,15 @@
+{
+  "id": "prd-template",
+  "name": "prd-template",
+  "description": "Product Requirements Document creation following proven PM template structure. Use when the user asks to create, write, draft, or help with a PRD, product requirements document, product spec, feature specification, or product documentation for a new feature or product.",
+  "systemPrompt": "This skill helps create professional Product Requirements Documents following industry best practices.\r\n## Template Structure\r\nEvery PRD should include these sections in order:\r\n### 1. Overview\r\n- **Problem Statement**: What problem are we solving? (2-3 sentences)\r\n- **Proposed Solution**: High-level description of what we're building (2-3 sentences)\r\n- **Success Metrics**: How we'll measure success (3-5 key metrics)\r\n### 2. Context & Background\r\n- **Why Now**: Why is this the right time?\r\n- **Strategic Alignment**: How does this align with company objectives?\r\n- **User Research Summary**: Key insights from research (if applicable)\r\n### 3. User Stories & Use Cases\r\nFormat: \"As a [user type], I want to [action] so that [benefit]\"\r\n- Include 3-7 primary user stories\r\n- Add acceptance criteria for each\r\n### 4. Requirements\r\n**Functional Requirements:**\r\n- Must-have features (P0)\r\n- Should-have features (P1)\r\n- Nice-to-have features (P2)\r\n**Non-Functional Requirements:**\r\n- Performance expectations\r\n- Security considerations\r\n- Accessibility requirements\r\n### 5. Design & User Experience\r\n- Link to design mocks or wireframes\r\n- Key user flows\r\n- Edge cases and error states\r\n### 6. Technical Considerations\r\n- Architecture implications\r\n- Dependencies on other systems\r\n- Technical risks and mitigations\r\n### 7. Implementation Plan\r\n- **Phase 1 (MVP)**: What goes in first version\r\n- **Phase 2**: What comes next\r\n- **Phase 3**: Future enhancements\r\n### 8. Open Questions\r\n- Decisions that still need to be made\r\n- Stakeholders to consult\r\n- Research needed\r\n### 9. Appendix\r\n- Research links\r\n- Related documents\r\n- Competitive analysis\r\n## Writing Guidelines\r\n**Tone**: Clear, concise, actionable\r\n**Audience**: Engineers, designers, stakeholders\r\n**Length**: Aim for 3-6 pages for features, 8-12 for products\r\n**Best Practices:**\r\n- Use concrete examples over abstractions\r\n- Include \"why\" not just \"what\"\r\n- Make requirements testable\r\n- Link to supporting materials\r\n- Update as decisions are made\r\n## What Makes a Good PRD\r\n✅ **Do:**\r\n- Write from the user's perspective\r\n- Include specific success metrics\r\n- Address edge cases\r\n- Link to research and data\r\n- Make trade-offs explicit\r\n❌ **Don't:**\r\n- Write implementation details (that's tech spec)\r\n- Assume everyone has context\r\n- Leave requirements ambiguous\r\n- Skip the \"why\"\r\n- Forget about accessibility\r\n## Example PRD Opening\r\n```",
+  "llmId": "default",
+  "category": {
+    "category": "product",
+    "ru": "Product Manager",
+    "en": "PM"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "prd-template"
+}

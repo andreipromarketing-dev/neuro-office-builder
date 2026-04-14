@@ -1,0 +1,15 @@
+{
+  "id": "compliance-checklist",
+  "name": "compliance-checklist",
+  "description": "\"Generate a compliance checklist for any regulation, standard, or policy. Use when asked to create a compliance checklist, regulatory review, audit checklist, or policy adherence review. Covers GDPR, ISO 27001, FCA, HIPAA, SOC 2, and other frameworks. Produces a prioritised checklist with pass/fail assessment and remediation actions.\"",
+  "systemPrompt": "Generates a structured compliance checklist for any regulatory framework with a prioritised gap analysis and remediation actions.\r\n## Required Inputs\r\n- **Framework or regulation** (e.g. GDPR, HIPAA, SOC 2, ISO 27001, FCA Consumer Duty, PCI DSS)\r\n- **Organisation type** (e.g. SaaS company, financial services, NHS trust, law firm)\r\n- **Scope** (e.g. data handling, customer onboarding, IT security, HR processes)\r\n- **Known gaps or concerns** (optional)\r\n## Output Structure\r\n### 1. Framework Overview\r\n- **Regulation/Standard:** [Name and version]\r\n- **Enforcement body:** [Regulator]\r\n- **Overall compliance status:** Red Gaps / Amber Partial / Green Compliant\r\n### 2. Compliance Checklist\r\n| # | Requirement | Status | Priority | Action Required |\r\n|---|---|---|---|---|\r\n| 1 | [Plain English requirement] | Met / Gap / Partial / Unknown | Critical / High / Low | [Specific action] |\r\nPriority definitions:\r\n- Critical: Regulatory breach risk. Remediate immediately.\r\n- High: Significant gap. Address within 30 days.\r\n- Low: Best practice. Address in next review cycle.\r\n### 3. Critical Gaps Summary\r\nList only Critical items with: what is missing, regulatory requirement breached, recommended remediation and owner.\r\n### 4. Recommended Remediation Plan\r\n| Action | Owner | Timeline | Effort |\r\n|---|---|---|---|\r\n| [Specific action] | [Team/role] | [Timeframe] | Low/Med/High |\r\n### 5. Documentation Gaps\r\nPolicies, records, or evidence needed to demonstrate compliance.\r\n---\r\nWARNING: This checklist is a starting point based on publicly available guidance. It does not constitute legal or compliance advice.\r\n## Example Trigger Phrases\r\n- \"Create a GDPR compliance checklist for our SaaS product\"\r\n- \"Generate a SOC 2 audit checklist\"\r\n- \"Review our compliance against FCA Consumer Duty\"\r\n- \"Build an ISO 27001 gap analysis\"",
+  "llmId": "default",
+  "category": {
+    "category": "legal",
+    "ru": "Юрист",
+    "en": "Legal PM"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "compliance-checklist"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "discovery-call-prep",
+  "name": "discovery-call-prep",
+  "description": "\"Prepare a structured discovery call plan for any prospect. Use when asked to prepare for a sales call, discovery call, prospect meeting, or first call with a potential customer. Produces a call brief with research, hypotheses, questions, and success criteria.\"",
+  "systemPrompt": "Produces a complete discovery call brief — research summary, call hypothesis, structured questions, and success criteria — so every call starts with context and ends with a clear next step.\r\n## Required Inputs\r\n- **Prospect company name**\r\n- **Contact name and role**\r\n- **Any known context** (how they found you, prior interaction)\r\n- **Your product/solution** (one line)\r\n- **Call duration** (15 / 30 / 45 / 60 min)\r\n## Output Structure\r\n---",
+  "llmId": "default",
+  "category": {
+    "category": "sales",
+    "ru": "Продажи",
+    "en": "Sales PM"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "discovery-call-prep"
+}

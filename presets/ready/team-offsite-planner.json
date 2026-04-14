@@ -1,0 +1,15 @@
+{
+  "id": "team-offsite-planner",
+  "name": "team-offsite-planner",
+  "description": "\"Plan a team offsite from goals to full agenda. Use when asked to plan a team offsite, away day, team retreat, quarterly offsite, or team-building event. Produces a full agenda, session designs, facilitation notes, and logistics checklist.\"",
+  "systemPrompt": "This skill designs a complete team offsite — from goals to minute-by-minute agenda, including session facilitation guides and a logistics checklist.\r\n## Required Inputs\r\nAsk the user for these if not provided:\r\n- **Team size** (number of people)\r\n- **Duration** (half day / full day / 1.5 days / 2 days)\r\n- **Primary goal** (e.g. Q3 planning / team bonding / strategy alignment / retrospective / all of the above)\r\n- **Location type** (office / external venue / remote-first hybrid)\r\n- **Key topics to cover** (if known)\r\n- **Any constraints** (budget, accessibility, team dynamics to be aware of)\r\n- **Remote attendees?** (Yes/No — affects session design significantly)\r\n## Output Structure\r\n---",
+  "llmId": "default",
+  "category": {
+    "category": "other",
+    "ru": "Другое",
+    "en": "Other"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "team-offsite-planner"
+}

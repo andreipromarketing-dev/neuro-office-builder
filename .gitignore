@@ -11,3 +11,4 @@ Temp/
 *dialog*.txt
 backend/data/*.json
 !backend/data/.gitkeep
+presets/source/

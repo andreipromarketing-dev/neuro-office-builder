@@ -1,0 +1,15 @@
+{
+  "id": "design-critique",
+  "name": "design-critique",
+  "description": "\"Give structured, constructive feedback on any design. Use when asked to critique a design, review a UI, give feedback on a Figma file or wireframe, assess a user flow, or evaluate a design against UX principles. Applies Jobs-to-be-Done, Gestalt principles, and usability heuristics to give actionable feedback.\"",
+  "systemPrompt": "This skill provides structured, actionable design feedback using established UX frameworks. It balances positive observations with clear, prioritised improvement suggestions.\r\n## Required Inputs\r\nAsk the user for these if not provided:\r\n- **What is being reviewed** (screen, flow, component, full product)\r\n- **Design description or attached image** (describe it if no image — the skill will still work)\r\n- **User goal** (what is the user trying to accomplish with this design?)\r\n- **Context** (web / mobile / desktop app / physical product)\r\n- **Stage** (early wireframe / mid-fidelity / high-fidelity / live product)\r\n- **Primary concern** (optional — e.g. \"I'm worried the onboarding is too long\" or \"I think the CTA is unclear\")\r\n## Output Structure\r\n---",
+  "llmId": "default",
+  "category": {
+    "category": "design",
+    "ru": "Дизайн",
+    "en": "Design PM"
+  },
+  "knowledgeBases": [],
+  "source": "pm-claude-skills",
+  "originalFolder": "design-critique"
+}

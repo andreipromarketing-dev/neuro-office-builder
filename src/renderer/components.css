@@ -1,0 +1,310 @@
+/* Material Design 3 Component Styles for NeuroOffice Builder */
+
+/* Base button styles */
+.md3-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  border-radius: var(--md-sys-shape-corner-full);
+  cursor: pointer;
+  transition: all var(--md-sys-motion-duration-medium-1) var(--md-sys-motion-easing-standard);
+  outline: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.md3-button:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+/* Filled button */
+.md3-button--filled {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  padding: 10px 24px;
+  min-height: 40px;
+}
+
+.md3-button--filled:hover {
+  background-color: color-mix(in srgb, var(--md-sys-color-primary) 90%, black);
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.md3-button--filled:focus {
+  background-color: var(--md-sys-color-primary);
+  box-shadow: 0px 0px 0px 3px color-mix(in srgb, var(--md-sys-color-primary) 50%, transparent);
+}
+
+/* Outlined button */
+.md3-button--outlined {
+  background-color: transparent;
+  color: var(--md-sys-color-primary);
+  border: 1px solid var(--md-sys-color-outline);
+  padding: 9px 23px;
+  min-height: 40px;
+}
+
+.md3-button--outlined:hover {
+  background-color: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+  border-color: var(--md-sys-color-primary);
+}
+
+.md3-button--outlined:focus {
+  border-color: var(--md-sys-color-primary);
+  box-shadow: 0px 0px 0px 3px color-mix(in srgb, var(--md-sys-color-primary) 50%, transparent);
+}
+
+/* Text button */
+.md3-button--text {
+  background-color: transparent;
+  color: var(--md-sys-color-primary);
+  padding: 10px 12px;
+  min-height: 40px;
+}
+
+.md3-button--text:hover {
+  background-color: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+}
+
+.md3-button--text:focus {
+  background-color: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+}
+
+/* Elevated button */
+.md3-button--elevated {
+  background-color: var(--md-sys-color-surface-container-low);
+  color: var(--md-sys-color-primary);
+  padding: 10px 24px;
+  min-height: 40px;
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.md3-button--elevated:hover {
+  background-color: color-mix(in srgb, var(--md-sys-color-surface-container-low) 90%, black);
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3), 0px 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Card styles */
+.md3-card {
+  background-color: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 16px;
+  transition: all var(--md-sys-motion-duration-medium-1) var(--md-sys-motion-easing-standard);
+}
+
+.md3-card--outlined {
+  background-color: transparent;
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.md3-card--elevated {
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.md3-card:hover {
+  background-color: var(--md-sys-color-surface-container-high);
+}
+
+/* Input styles */
+.md3-input {
+  background-color: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-small);
+  padding: 12px 16px;
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  color: var(--md-sys-color-on-surface);
+  outline: none;
+  transition: all var(--md-sys-motion-duration-medium-1) var(--md-sys-motion-easing-standard);
+  width: 100%;
+}
+
+.md3-input:hover {
+  border-color: var(--md-sys-color-outline-variant);
+}
+
+.md3-input:focus {
+  border-color: var(--md-sys-color-primary);
+  box-shadow: 0px 0px 0px 2px color-mix(in srgb, var(--md-sys-color-primary) 50%, transparent);
+}
+
+.md3-input::placeholder {
+  color: var(--md-sys-color-outline);
+}
+
+/* Select styles */
+.md3-select {
+  background-color: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-small);
+  padding: 12px 16px;
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  color: var(--md-sys-color-on-surface);
+  outline: none;
+  cursor: pointer;
+  transition: all var(--md-sys-motion-duration-medium-1) var(--md-sys-motion-easing-standard);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%238a9298' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
+}
+
+.md3-select:hover {
+  border-color: var(--md-sys-color-outline-variant);
+}
+
+.md3-select:focus {
+  border-color: var(--md-sys-color-primary);
+  box-shadow: 0px 0px 0px 2px color-mix(in srgb, var(--md-sys-color-primary) 50%, transparent);
+}
+
+/* Textarea styles */
+.md3-textarea {
+  background-color: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-small);
+  padding: 12px 16px;
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  color: var(--md-sys-color-on-surface);
+  outline: none;
+  transition: all var(--md-sys-motion-duration-medium-1) var(--md-sys-motion-easing-standard);
+  width: 100%;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.md3-textarea:hover {
+  border-color: var(--md-sys-color-outline-variant);
+}
+
+.md3-textarea:focus {
+  border-color: var(--md-sys-color-primary);
+  box-shadow: 0px 0px 0px 2px color-mix(in srgb, var(--md-sys-color-primary) 50%, transparent);
+}
+
+/* Checkbox styles */
+.md3-checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  background-color: transparent;
+  cursor: pointer;
+  appearance: none;
+  transition: all var(--md-sys-motion-duration-medium-1) var(--md-sys-motion-easing-standard);
+}
+
+.md3-checkbox:checked {
+  background-color: var(--md-sys-color-primary);
+  border-color: var(--md-sys-color-primary);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.md3-checkbox:hover {
+  border-color: var(--md-sys-color-primary);
+}
+
+/* Tab navigation */
+.md3-tabs {
+  display: flex;
+  gap: 4px;
+  background-color: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 4px;
+}
+
+.md3-tab {
+  flex: 1;
+  padding: 12px 16px;
+  background-color: transparent;
+  border: none;
+  border-radius: var(--md-sys-shape-corner-small);
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+  transition: all var(--md-sys-motion-duration-medium-1) var(--md-sys-motion-easing-standard);
+  text-align: center;
+}
+
+.md3-tab:hover {
+  background-color: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+  color: var(--md-sys-color-on-surface);
+}
+
+.md3-tab--active {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+
+.md3-tab--active:hover {
+  background-color: color-mix(in srgb, var(--md-sys-color-primary) 90%, black);
+}
+
+/* Status indicators */
+.md3-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--md-sys-shape-corner-full);
+  font-family: var(--md-sys-typescale-label-small-font);
+  font-size: var(--md-sys-typescale-label-small-size);
+  font-weight: var(--md-sys-typescale-label-small-weight);
+}
+
+.md3-status--online {
+  background-color: rgba(63, 185, 80, 0.2);
+  color: #3FB950;
+}
+
+.md3-status--offline {
+  background-color: rgba(248, 81, 73, 0.2);
+  color: #F85149;
+}
+
+.md3-status--checking {
+  background-color: rgba(210, 153, 34, 0.2);
+  color: #D29922;
+}
+
+/* Animation classes */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn var(--md-sys-motion-duration-medium-2) var(--md-sys-motion-easing-standard);
+}
+
+.animate-slideIn {
+  animation: slideIn var(--md-sys-motion-duration-medium-2) var(--md-sys-motion-easing-standard);
+}
+
+.animate-pulse {
+  animation: pulse 1.5s var(--md-sys-motion-easing-standard) infinite;
+}

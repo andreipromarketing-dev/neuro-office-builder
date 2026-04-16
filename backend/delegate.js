@@ -8,11 +8,13 @@ let searchIndex = null;
 
 export function setRoles(r) {
   roles = r;
+  console.log(`[DELEGATE] Загружено ролей: ${roles.length}, имена: ${roles.map(r => r.name).join(', ')}`);
   rebuildSearchIndex();
 }
 
 export function setDocuments(d) {
   documents = d;
+  console.log(`[DELEGATE] Загружено документов: ${documents.length}`);
   rebuildSearchIndex();
 }
 
@@ -39,21 +41,34 @@ function searchDocuments(query, roleId = null, limit = 5) {
 }
 
 export async function delegate(bossMessage, bossRoleId, llmCallFn) {
+  console.log(`[DELEGATE] Вход: bossRoleId=${bossRoleId}, message=${bossMessage.substring(0, 100)}`);
   const CALL_PATTERNS = [
     /CALL\s*\[([^\]]+)\]\s*\[([^\]]+)\]/gi,
-    /CALL\s+(\w+)\s*[-–—]?\s*(.+?)(?:\.|$)/gi
+    /CALL\s+(\w+)\s*[-–—]?\s*(.+?)(?:\.|$)/gi,
+    /CALL\s*:\s*(\w+)\s*[:-]\s*(.+)/gi,
+    /CALL\s+(\w+)\s+для\s+(.+)/gi,
+    /CALL\s+(\w+)\s*\((.*?)\)/gi
   ];
   
-  let match = null;
+  // Ищем паттерн CALL
+  let subRoleName = null;
+  let subTask = null;
+
   for (const pattern of CALL_PATTERNS) {
-    match = bossMessage.match(pattern);
-    if (match) break;
+    const regex = new RegExp(pattern.source, 'i'); // без глобального флага для exec
+    const match = regex.exec(bossMessage);
+    if (match && match.length >= 3) {
+      subRoleName = match[1].trim();
+      subTask = match[2].trim();
+      console.log(`[DELEGATE] Найдена команда CALL: ${subRoleName} -> ${subTask}`);
+      break;
+    }
   }
-  
-  if (!match) return { delegated: false };
-  
-  const subRoleName = match[1].trim();
-  const subTask = match[2].trim();
+
+  if (!subRoleName || !subTask) {
+    console.log('[DELEGATE] Не найдена команда CALL в сообщении:', bossMessage.substring(0, 100));
+    return { delegated: false };
+  }
   
   const subRole = roles.find(r => 
     r.name?.toLowerCase() === subRoleName.toLowerCase() ||
@@ -73,9 +88,12 @@ export async function delegate(bossMessage, bossRoleId, llmCallFn) {
   ];
   
   try {
+    console.log(`[DELEGATE] Вызов подчиненного ${subRole.name} с задачей: ${subTask.substring(0, 50)}...`);
     const response = await llmCallFn(subRole.llmName, messages);
+    console.log(`[DELEGATE] Ответ от ${subRole.name}: ${response.substring(0, 100)}...`);
     return { delegated: true, subRole: subRole.name, output: response };
   } catch (e) {
+    console.error(`[DELEGATE] Ошибка вызова LLM: ${e.message}`);
     return { delegated: false, error: e.message };
   }
 }

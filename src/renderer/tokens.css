@@ -1,0 +1,166 @@
+/* Material Design 3 Tokens for NeuroOffice Builder */
+/* Seed color: #003445 */
+
+:root {
+  /* Color tokens - generated from seed color #003445 */
+  --md-sys-color-primary: #003445;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #004d66;
+  --md-sys-color-on-primary-container: #ffffff;
+
+  --md-sys-color-secondary: #3a5b6d;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #4a6b7d;
+  --md-sys-color-on-secondary-container: #ffffff;
+
+  --md-sys-color-tertiary: #8a5c00;
+  --md-sys-color-on-tertiary: #ffffff;
+  --md-sys-color-tertiary-container: #a67000;
+  --md-sys-color-on-tertiary-container: #ffffff;
+
+  --md-sys-color-error: #ba1a1a;
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-error-container: #ffdad6;
+  --md-sys-color-on-error-container: #410002;
+
+  /* Surface colors */
+  --md-sys-color-surface: #0f1418;
+  --md-sys-color-on-surface: #e1e7ec;
+  --md-sys-color-on-surface-variant: #c0c7cd;
+
+  --md-sys-color-surface-container-lowest: #0a0e11;
+  --md-sys-color-surface-container-low: #171d22;
+  --md-sys-color-surface-container: #1c2227;
+  --md-sys-color-surface-container-high: #262c31;
+  --md-sys-color-surface-container-highest: #31373c;
+
+  --md-sys-color-surface-dim: #0f1418;
+  --md-sys-color-surface-bright: #353b40;
+
+  --md-sys-color-outline: #8a9298;
+  --md-sys-color-outline-variant: #40484d;
+
+  /* Inverse colors */
+  --md-sys-color-inverse-surface: #e1e7ec;
+  --md-sys-color-inverse-on-surface: #2a3035;
+  --md-sys-color-inverse-primary: #00668a;
+
+  /* Typography tokens */
+  --md-sys-typescale-display-large-font: 'Roboto', sans-serif;
+  --md-sys-typescale-display-large-size: 57px;
+  --md-sys-typescale-display-large-weight: 400;
+  --md-sys-typescale-display-large-line-height: 64px;
+
+  --md-sys-typescale-display-medium-font: 'Roboto', sans-serif;
+  --md-sys-typescale-display-medium-size: 45px;
+  --md-sys-typescale-display-medium-weight: 400;
+  --md-sys-typescale-display-medium-line-height: 52px;
+
+  --md-sys-typescale-display-small-font: 'Roboto', sans-serif;
+  --md-sys-typescale-display-small-size: 36px;
+  --md-sys-typescale-display-small-weight: 400;
+  --md-sys-typescale-display-small-line-height: 44px;
+
+  --md-sys-typescale-headline-large-font: 'Roboto', sans-serif;
+  --md-sys-typescale-headline-large-size: 32px;
+  --md-sys-typescale-headline-large-weight: 400;
+  --md-sys-typescale-headline-large-line-height: 40px;
+
+  --md-sys-typescale-headline-medium-font: 'Roboto', sans-serif;
+  --md-sys-typescale-headline-medium-size: 28px;
+  --md-sys-typescale-headline-medium-weight: 400;
+  --md-sys-typescale-headline-medium-line-height: 36px;
+
+  --md-sys-typescale-headline-small-font: 'Roboto', sans-serif;
+  --md-sys-typescale-headline-small-size: 24px;
+  --md-sys-typescale-headline-small-weight: 400;
+  --md-sys-typescale-headline-small-line-height: 32px;
+
+  --md-sys-typescale-title-large-font: 'Roboto', sans-serif;
+  --md-sys-typescale-title-large-size: 22px;
+  --md-sys-typescale-title-large-weight: 400;
+  --md-sys-typescale-title-large-line-height: 28px;
+
+  --md-sys-typescale-title-medium-font: 'Roboto', sans-serif;
+  --md-sys-typescale-title-medium-size: 16px;
+  --md-sys-typescale-title-medium-weight: 500;
+  --md-sys-typescale-title-medium-line-height: 24px;
+
+  --md-sys-typescale-title-small-font: 'Roboto', sans-serif;
+  --md-sys-typescale-title-small-size: 14px;
+  --md-sys-typescale-title-small-weight: 500;
+  --md-sys-typescale-title-small-line-height: 20px;
+
+  --md-sys-typescale-body-large-font: 'Roboto', sans-serif;
+  --md-sys-typescale-body-large-size: 16px;
+  --md-sys-typescale-body-large-weight: 400;
+  --md-sys-typescale-body-large-line-height: 24px;
+
+  --md-sys-typescale-body-medium-font: 'Roboto', sans-serif;
+  --md-sys-typescale-body-medium-size: 14px;
+  --md-sys-typescale-body-medium-weight: 400;
+  --md-sys-typescale-body-medium-line-height: 20px;
+
+  --md-sys-typescale-body-small-font: 'Roboto', sans-serif;
+  --md-sys-typescale-body-small-size: 12px;
+  --md-sys-typescale-body-small-weight: 400;
+  --md-sys-typescale-body-small-line-height: 16px;
+
+  --md-sys-typescale-label-large-font: 'Roboto', sans-serif;
+  --md-sys-typescale-label-large-size: 14px;
+  --md-sys-typescale-label-large-weight: 500;
+  --md-sys-typescale-label-large-line-height: 20px;
+
+  --md-sys-typescale-label-medium-font: 'Roboto', sans-serif;
+  --md-sys-typescale-label-medium-size: 12px;
+  --md-sys-typescale-label-medium-weight: 500;
+  --md-sys-typescale-label-medium-line-height: 16px;
+
+  --md-sys-typescale-label-small-font: 'Roboto', sans-serif;
+  --md-sys-typescale-label-small-size: 11px;
+  --md-sys-typescale-label-small-weight: 500;
+  --md-sys-typescale-label-small-line-height: 16px;
+
+  /* Shape tokens */
+  --md-sys-shape-corner-none: 0px;
+  --md-sys-shape-corner-extra-small: 4px;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-large-increased: 20px;
+  --md-sys-shape-corner-extra-large: 28px;
+  --md-sys-shape-corner-extra-large-increased: 32px;
+  --md-sys-shape-corner-extra-extra-large: 48px;
+  --md-sys-shape-corner-full: 9999px;
+
+  /* Elevation levels */
+  --md-sys-elevation-level-0: 0px;
+  --md-sys-elevation-level-1: 1px;
+  --md-sys-elevation-level-2: 3px;
+  --md-sys-elevation-level-3: 6px;
+  --md-sys-elevation-level-4: 8px;
+  --md-sys-elevation-level-5: 12px;
+
+  /* Motion tokens */
+  --md-sys-motion-duration-short-1: 50ms;
+  --md-sys-motion-duration-short-2: 100ms;
+  --md-sys-motion-duration-medium-1: 150ms;
+  --md-sys-motion-duration-medium-2: 200ms;
+  --md-sys-motion-duration-long-1: 250ms;
+  --md-sys-motion-duration-long-2: 300ms;
+
+  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --md-sys-motion-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+}
+
+/* Light theme (optional) */
+@media (prefers-color-scheme: light) {
+  :root {
+    --md-sys-color-surface: #f8fafc;
+    --md-sys-color-on-surface: #0f1418;
+    --md-sys-color-surface-container: #ffffff;
+    --md-sys-color-surface-container-low: #f1f5f9;
+  }
+}

@@ -368,6 +368,7 @@ export default function App() {
   const [presetLibraryLoading, setPresetLibraryLoading] = useState(false)
   const [presetFilterCategory, setPresetFilterCategory] = useState<string>('all')
   const [presetSearchQuery, setPresetSearchQuery] = useState('')
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
 
   const loadPresetLibrary = async () => {
     setPresetLibraryLoading(true)
@@ -911,12 +912,27 @@ export default function App() {
   const [userInput, setUserInput] = useState('')
   const [activeRole, setActiveRole] = useState<Role | null>(null)
 
-  const simulateLaunch = (roleId: string) => {
+  const simulateLaunch = async (roleId: string) => {
     const role = roles.find(r => r.id === roleId)
     if (!role) {
       addLog('ОШИБКА', 'Роль не найдена')
       return
     }
+    
+    // Создаём новую сессию при запуске
+    try {
+      const sessionRes = await fetch(`${API_BASE}/sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ presetId: 'default' })
+      })
+      const sessionData = await sessionRes.json()
+      setCurrentSessionId(sessionData.sessionId)
+      addLog('СЕССИЯ', `Создана: ${sessionData.sessionId}`)
+    } catch (e) {
+      console.error('Ошибка создания сессии:', e)
+    }
+    
     setActiveRole(role)
     setAgentReady(true)
     setAgentRunning(false)
@@ -965,7 +981,12 @@ export default function App() {
       const response = await fetch(`${API_BASE}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roleId: backendRole.id, message, includeHistory: true })
+        body: JSON.stringify({ 
+          roleId: backendRole.id, 
+          message, 
+          includeHistory: true,
+          sessionId: currentSessionId
+        })
       })
       
       if (!response.ok) {

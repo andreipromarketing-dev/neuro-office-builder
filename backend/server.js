@@ -457,13 +457,103 @@ app.post('/api/rag/search', (req, res) => {
 
 // ==================== API: LLM ЗАПРОСЫ ====================
 
+// sessionManager управляет изоляцией параллельных сессий
+// session = neuro-office (группа ролей с общей историей)
+const sessionManager = {
+  activeSessions: new Map(), // sessionId -> { presetId, roles: roleId[], createdAt }
+  currentSessionId: null,
+  
+  createSession(presetId = 'default') {
+    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    this.activeSessions.set(sessionId, {
+      presetId,
+      roles: [],
+      createdAt: new Date().toISOString()
+    });
+    this.currentSessionId = sessionId;
+    console.log(`[SESSION] Создана новая сессия: ${sessionId} (preset: ${presetId})`);
+    return sessionId;
+  },
+  
+  setCurrentSession(sessionId) {
+    if (this.activeSessions.has(sessionId)) {
+      this.currentSessionId = sessionId;
+      console.log(`[SESSION] Активная сессия: ${sessionId}`);
+    }
+  },
+  
+  getCurrentSession() {
+    return this.currentSessionId;
+  },
+  
+  registerRoleInSession(sessionId, roleId) {
+    const session = this.activeSessions.get(sessionId);
+    if (session && !session.roles.includes(roleId)) {
+      session.roles.push(roleId);
+    }
+  },
+  
+  listSessions() {
+    return Array.from(this.activeSessions.entries()).map(([id, data]) => ({
+      id,
+      presetId: data.presetId,
+      roleCount: data.roles.length,
+      createdAt: data.createdAt
+    }));
+  },
+  
+  closeSession(sessionId) {
+    this.activeSessions.delete(sessionId);
+    if (this.currentSessionId === sessionId) {
+      this.currentSessionId = this.activeSessions.keys().next().value || null;
+    }
+  }
+};
+
+// API для управления сессиями
+app.post('/api/sessions', (req, res) => {
+  const { presetId } = req.body;
+  const sessionId = sessionManager.createSession(presetId || 'default');
+  res.json({ sessionId, sessions: sessionManager.listSessions() });
+});
+
+app.get('/api/sessions', (req, res) => {
+  res.json({
+    current: sessionManager.getCurrentSession(),
+    sessions: sessionManager.listSessions()
+  });
+});
+
+app.post('/api/sessions/:sessionId/activate', (req, res) => {
+  sessionManager.setCurrentSession(req.params.sessionId);
+  res.json({ currentSession: sessionManager.getCurrentSession() });
+});
+
+app.delete('/api/sessions/:sessionId', (req, res) => {
+  sessionManager.closeSession(req.params.sessionId);
+  res.json({ sessions: sessionManager.listSessions() });
+});
+
 app.post('/api/chat', async (req, res) => {
-  const { roleId, message, includeHistory = true } = req.body;
+  const { roleId, message, includeHistory = true, sessionId: clientSessionId } = req.body;
+  
+  // Используем переданную сессию или текущую активную
+  let sessionId = clientSessionId || sessionManager.getCurrentSession();
+  if (!sessionId) {
+    sessionId = sessionManager.createSession();
+  }
   
   const role = roles.find(r => r.id === roleId);
   if (!role) {
     return res.status(404).json({ error: 'Роль не найдена' });
   }
+  
+  // Регистрируем роль в сессии
+  sessionManager.registerRoleInSession(sessionId, roleId);
+  
+  // Логируем с какой сессией работаем
+  const sessionInfo = sessionManager.activeSessions.get(sessionId);
+  console.log(`[CHAT] Сессия: ${sessionId} | Роль: ${role.name} | LLM: ${role.llmName}`);
   
   // Ищем LLM по имени (т.к. ID могут не совпадать между фронтендом и бэкендом)
   let llm = llms.find(l => l.name === role.llmName);
@@ -535,7 +625,7 @@ app.post('/api/chat', async (req, res) => {
   // Если была оркестрация - возвращаем ответ подчинённого, не вызываем руководителя
   if (subResponse && subRoleName) {
     console.log(`[ОРКЕСТРАЦИЯ] Возвращаю ответ от ${subRoleName}`);
-    conversationHistory.push({ roleId, message, response: subResponse, timestamp: new Date().toISOString() });
+    conversationHistory.push({ roleId, message, response: subResponse, timestamp: new Date().toISOString(), sessionId });
     if (conversationHistory.length > 100) conversationHistory = conversationHistory.slice(-100);
     saveHistory();
     const subRoleLlm = roles.find(r => r.name && r.name.includes(subRoleName))?.llmName;
@@ -543,7 +633,8 @@ app.post('/api/chat', async (req, res) => {
       response: subResponse, 
       documents: relevantDocs,
       llm: llms.find(l => l.name === subRoleLlm)?.name || 'unknown',
-      subRole: subRoleName
+      subRole: subRoleName,
+      sessionId
     });
   }
    
@@ -558,9 +649,11 @@ app.post('/api/chat', async (req, res) => {
   const fullSystem = role.systemPrompt + context + orchInstructions;
   messages.push({ role: 'system', content: fullSystem });
   
-  // История чата (последние 5 сообщений)
+  // История чата - изолируем по SESSION + ROLE (последние 10 сообщений)
   if (includeHistory) {
-    const history = conversationHistory.filter(h => h.roleId === roleId).slice(-10);
+    const history = conversationHistory
+      .filter(h => h.roleId === roleId && h.sessionId === sessionId)
+      .slice(-10);
     history.forEach(h => {
       messages.push({ role: 'user', content: h.message });
       messages.push({ role: 'assistant', content: h.response });
@@ -612,8 +705,8 @@ app.post('/api/chat', async (req, res) => {
       }
     }
     
-    // Сохраняем в историю
-    conversationHistory.push({ roleId, message, response, timestamp: new Date().toISOString() });
+    // Сохраняем в историю с привязкой к сессии
+    conversationHistory.push({ roleId, message, response, timestamp: new Date().toISOString(), sessionId });
     if (conversationHistory.length > 100) {
       conversationHistory = conversationHistory.slice(-100);
     }
@@ -636,7 +729,8 @@ app.post('/api/chat', async (req, res) => {
       response: cleanResponse, 
       documents: relevantDocs,
       llm: llm.name,
-      subRole: subRoleName || null
+      subRole: subRoleName || null,
+      sessionId
     });
     
   } catch (error) {
@@ -1177,16 +1271,31 @@ app.get('/api/status', (req, res) => {
 
 app.get('/api/chat-history/:roleId', (req, res) => {
   const { roleId } = req.params;
+  const { sessionId } = req.query;
   const limit = parseInt(req.query.limit) || 20;
-  const history = conversationHistory
-    .filter(h => h.roleId === roleId)
-    .slice(-limit);
-  res.json(history);
+  
+  let history = conversationHistory.filter(h => h.roleId === roleId);
+  
+  // Фильтр по сессии если передан
+  if (sessionId) {
+    history = history.filter(h => h.sessionId === sessionId);
+  }
+  
+  res.json(history.slice(-limit));
 });
 
 app.delete('/api/chat-history/:roleId', (req, res) => {
   const { roleId } = req.params;
-  conversationHistory = conversationHistory.filter(h => h.roleId !== roleId);
+  const { sessionId } = req.query;
+  
+  if (sessionId) {
+    // Удаляем только историю конкретной сессии
+    conversationHistory = conversationHistory.filter(h => !(h.roleId === roleId && h.sessionId === sessionId));
+  } else {
+    // Удаляем всю историю роли
+    conversationHistory = conversationHistory.filter(h => h.roleId !== roleId);
+  }
+  
   saveHistory();
   res.json({ success: true });
 });

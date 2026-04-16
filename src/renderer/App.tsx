@@ -459,6 +459,107 @@ export default function App() {
     operations: 'Операции'
   }
 
+  const presetNameTranslations: Record<string, string> = {
+    'prd-template': 'Шаблон ТЗ',
+    'sprint-planning': 'Планирование спринта',
+    'sprint-brief': 'Бриф спринта',
+    'product-launch-checklist': 'Чеклист запуска',
+    'feature-prioritisation': 'Приоритизация фич',
+    'okr-builder': 'Построение OKR',
+    'user-research-synthesis': 'Синтез исследований',
+    'competitive-analysis': 'Конкурентный анализ',
+    'competitor-teardown': 'Анализ конкурентов',
+    'data-analysis-standard': 'Анализ данных',
+    'experiment-designer': 'Дизайн экспериментов',
+    'ab-test-planner': 'Планирование A/B тестов',
+    'go-to-market-planner': 'Планирование GTM',
+    'pricing-strategy': 'Ценовая стратегия',
+    'product-health-analysis': 'Анализ здоровья продукта',
+    'roadmap-presentation': 'Презентация роадмапа',
+    'retention-analysis': 'Анализ удержания',
+    'retro-analysis': 'Ретроспектива',
+    'pm-weekly-review': 'Еженедельный PM-обзор',
+    'executive-update': 'Обновление для руководства',
+    'stakeholder-influence-mapper': 'Карта стейкхолдеров',
+    'strategic-narrative-generator': 'Генератор стратегии',
+    'ambiguity-resolver': 'Разрешитель неоднозначностей',
+    'multi-source-signal-synthesiser': 'Синтезатор сигналов',
+    'competitive-intelligence-monitor': 'Мониторинг конкурентов',
+    'competitor-signal-tracker': 'Трекер конкурентов',
+    'ai-product-canvas': 'Canvas AI-продукта',
+    'job-story-mapper': 'Маппер историй',
+    'design-critique': 'Критика дизайна',
+    'ux-research-plan': 'План UX исследования',
+    'accessibility-audit': 'Аудит доступности',
+    'account-plan': 'План счёта',
+    'discovery-call-prep': 'Подготовка звонка',
+    'proposal-writer': 'Написаник предложений',
+    'sales-battlecard': 'Боевая карта',
+    'api-docs-writer': 'Документация API',
+    'architecture-decision-record': 'Запись архитектурных решений',
+    'code-review-checklist': 'Чеклист ревью',
+    'incident-postmortem': 'После инцидента',
+    'job-description-writer': 'Описание вакансии',
+    'hiring-rubric': 'Рубрика найма',
+    'onboarding-plan': 'План онбординга',
+    'performance-review': 'ОбзорPerformance',
+    'employee-engagement-survey': 'Опрос вовлечённости',
+    'redundancy-consultation': 'Консультация по сокращению',
+    'meeting-notes': 'Заметки к совещанию',
+    'project-status-report': 'Статус проекта',
+    'process-documentation': 'Документация процессов',
+    'sop-writer': 'Написаник SOP',
+    'vendor-evaluation': 'Оценка вендора',
+    'compliance-checklist': 'Чеклист соответствия',
+    'contract-review': 'Обзор контракта',
+    'legal-brief': 'Юридическая сводка',
+    'nda-analyser': 'Анализатор NDA',
+    'dashboard-brief': 'Бриф дашборда',
+    'content-calendar': 'Контент-календарь',
+    'email-campaign': 'Email-кампания',
+    'go-to-market': 'Выход на рынок',
+    'launch-readiness': 'Готовность к запуску',
+    'executive-summary': 'Резюме для руководства',
+    'grant-proposal': 'Заявка на грант',
+    'press-release': 'Пресс-релиз',
+    'board-deck-narrative': 'История для совета',
+    'investor-update': 'Обновление для инвесторов',
+    'investor-pitch-deck': 'Питч-дек',
+    'job-application': 'Заявка на работу',
+    'budget-variance-analysis': 'Анализ бюджета',
+    'financial-due-diligence': 'Финансовый Due Diligence',
+    'financial-model-narrative': 'Описание финансовой модели',
+    'metrics-framework': 'Метрики',
+    'sql-query-explainer': 'SQL-explainer',
+    'clinical-case-summary': 'Сводка по случаю',
+    'literature-review': 'Обзор литературы',
+    'patient-communication': 'Коммуникация с пациентом',
+    'research-protocol': 'Исследовательский протокол',
+    'figma-user-flow-planner': 'Планирование пользовательских потоков',
+    'figma-design-brief': 'Бриф дизайна',
+    'figma-design-critique-pm': 'Критика дизайна PM',
+    'figma-design-qa': 'QA дизайна',
+    'figma-design-review': 'Обзор дизайна',
+    'figma-prototype-plan': 'План прототипа',
+    'figma-spacing-system': 'Система интервалов',
+    'figma-variant-matrix': 'Матрица вариантов',
+    'figma-component-audit': 'Аудит компонентов',
+    'figma-annotation-guide': 'Гайд аннотаций',
+    'assumption-mapper': 'Маппер допущений',
+    'discovery-interview-guide': 'Гайд интервью',
+    'user-interview-synthesis': 'Синтез интервью',
+    'team-offsite-planner': 'Планирование оффсайта',
+    'stakeholder-update': 'Обновление стейкхолдеров',
+    'roadmap-narrative': 'История роадмапа',
+    'rice-prioritisation': 'Приоритизация RICE',
+    'rice-impact-matrix': 'Матрица влияния RICE'
+  }
+
+  const translatePresetName = (name: string): { ru: string; en: string } => {
+    const translation = presetNameTranslations[name]
+    return translation ? { ru: translation, en: name } : { ru: name, en: name }
+  }
+
   const addLog = (action: string, details: string) => {
     const entry: LogEntry = { time: getTime(), action, details }
     setLogs(prev => {
@@ -1515,24 +1616,24 @@ export default function App() {
         {/* Модалка библиотеки пресетов */}
         {showPresetLibrary && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.9)', zIndex: 9999, padding: 20, overflow: 'auto' }}>
-            <div style={{ background: '#021c28', borderRadius: 16, padding: 16, maxWidth: 600, margin: '0 auto', border: '1px solid rgba(33,185,244,0.3)' }}>
+            <div style={{ background: '#021c28', borderRadius: 16, padding: 20, maxWidth: 650, margin: '0 auto', border: '1px solid rgba(33,185,244,0.3)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h2 style={{ fontSize: 16, margin: 0, color: '#21b9f4' }}>📂 Библиотека пресетов</h2>
-                <button onClick={() => setShowPresetLibrary(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer' }}>✕</button>
+                <h2 style={{ fontSize: 20, margin: 0, color: '#21b9f4' }}>📂 Библиотека пресетов</h2>
+                <button onClick={() => setShowPresetLibrary(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 24, cursor: 'pointer', padding: 4 }}>✕</button>
               </div>
               
               {/* Поиск и фильтр */}
-              <div style={{ marginBottom: 12 }}>
+              <div style={{ marginBottom: 14 }}>
                 <input 
                   value={presetSearchQuery}
                   onChange={e => setPresetSearchQuery(e.target.value)}
                   placeholder="Поиск по названию..."
-                  style={{ width: '100%', padding: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#fff', fontSize: 13, marginBottom: 8 }}
+                  style={{ width: '100%', padding: 12, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#fff', fontSize: 14, marginBottom: 10 }}
                 />
-                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                  <button onClick={() => setPresetFilterCategory('all')} style={{ padding: '4px 10px', background: presetFilterCategory === 'all' ? '#21b9f4' : 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 12, color: presetFilterCategory === 'all' ? '#000' : '#fff', fontSize: 10, cursor: 'pointer' }}>Все</button>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <button onClick={() => setPresetFilterCategory('all')} style={{ padding: '6px 14px', background: presetFilterCategory === 'all' ? '#21b9f4' : 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 14, color: presetFilterCategory === 'all' ? '#000' : '#fff', fontSize: 12, cursor: 'pointer' }}>Все</button>
                   {['product', 'design', 'sales', 'engineering', 'hr', 'marketing', 'finance', 'legal', 'operations'].map(cat => (
-                    <button key={cat} onClick={() => setPresetFilterCategory(cat)} style={{ padding: '4px 10px', background: presetFilterCategory === cat ? categoryColors[cat] || '#21b9f4' : 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 12, color: presetFilterCategory === cat ? '#000' : '#fff', fontSize: 10, cursor: 'pointer' }}>{categoryLabels[cat] || cat}</button>
+                    <button key={cat} onClick={() => setPresetFilterCategory(cat)} style={{ padding: '6px 14px', background: presetFilterCategory === cat ? categoryColors[cat] || '#21b9f4' : 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 14, color: presetFilterCategory === cat ? '#000' : '#fff', fontSize: 12, cursor: 'pointer' }}>{categoryLabels[cat] || cat}</button>
                   ))}
                 </div>
               </div>
@@ -1540,30 +1641,40 @@ export default function App() {
               {/* Список пресетов */}
               <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
                 {presetLibraryPresets
-                  .filter(p => (presetFilterCategory === 'all' || p.category === presetFilterCategory) && (!presetSearchQuery || p.name?.toLowerCase().includes(presetSearchQuery.toLowerCase())))
+                  .filter(p => {
+                    const name = translatePresetName(p.name || p.id)
+                    const searchLower = presetSearchQuery?.toLowerCase() || ''
+                    return (presetFilterCategory === 'all' || p.category === presetFilterCategory) && 
+                      (!searchLower || name.ru.toLowerCase().includes(searchLower) || name.en.toLowerCase().includes(searchLower))
+                  })
                   .slice(0, 50)
-                  .map((preset) => (
-                    <div key={preset.id} style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 10, padding: 12, marginBottom: 8, borderLeft: `3px solid ${categoryColors[preset.category] || '#21b9f4'}` }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                        <div style={{ fontWeight: 600, fontSize: 13, color: '#fff' }}>{preset.name}</div>
-                        <span style={{ fontSize: 9, background: categoryColors[preset.category] || '#21b9f4', color: '#000', padding: '2px 6px', borderRadius: 8 }}>{categoryLabels[preset.category] || preset.category}</span>
+                  .map((preset) => {
+                    const name = translatePresetName(preset.name || preset.id)
+                    return (
+                    <div key={preset.id} style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 14, marginBottom: 10, borderLeft: `4px solid ${categoryColors[preset.category] || '#21b9f4'}` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 16, color: '#fff' }}>{name.ru}</div>
+                          <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{name.en}</div>
+                        </div>
+                        <span style={{ fontSize: 11, background: categoryColors[preset.category] || '#21b9f4', color: '#000', padding: '4px 10px', borderRadius: 10 }}>{categoryLabels[preset.category] || preset.category}</span>
                       </div>
-                      <div style={{ fontSize: 10, opacity: 0.6, marginBottom: 8, color: 'rgba(255,255,255,0.7)' }}>{preset.description?.substring(0, 100)}</div>
+                      <div style={{ fontSize: 13, opacity: 0.7, marginBottom: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>{preset.description?.substring(0, 120)}</div>
                       <button 
                         onClick={() => { addPresetToRole(preset); setShowPresetLibrary(false) }}
                         disabled={!newRole.llmId}
-                        style={{ width: '100%', padding: 8, background: newRole.llmId ? '#3ddb7f' : 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 6, color: newRole.llmId ? '#000' : '#666', fontSize: 11, fontWeight: 600, cursor: newRole.llmId ? 'pointer' : 'not-allowed' }}
+                        style={{ width: '100%', padding: 12, background: newRole.llmId ? '#3ddb7f' : 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, color: newRole.llmId ? '#000' : '#666', fontSize: 13, fontWeight: 600, cursor: newRole.llmId ? 'pointer' : 'not-allowed' }}
                       >
                         {newRole.llmId ? '➕ Добавить роль' : 'Сначала выберите LLM'}
                       </button>
                     </div>
-                  ))}
+                  )})}
                 {presetLibraryPresets.filter(p => (presetFilterCategory === 'all' || p.category === presetFilterCategory) && (!presetSearchQuery || p.name?.toLowerCase().includes(presetSearchQuery.toLowerCase()))).length === 0 && (
-                  <div style={{ textAlign: 'center', padding: 20, opacity: 0.5, fontSize: 12 }}>Нет пресетов</div>
+                  <div style={{ textAlign: 'center', padding: 20, opacity: 0.5, fontSize: 14 }}>Нет пресетов</div>
                 )}
               </div>
               
-              <div style={{ fontSize: 10, opacity: 0.5, marginTop: 12, textAlign: 'center' }}>
+              <div style={{ fontSize: 12, opacity: 0.5, marginTop: 14, textAlign: 'center' }}>
                 Показано из {presetLibraryPresets.length} пресетов
               </div>
             </div>

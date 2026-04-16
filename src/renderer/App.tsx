@@ -363,6 +363,101 @@ export default function App() {
   const [fileSearchQuery, setFileSearchQuery] = useState('')
   const [fileSearchResults, setFileSearchResults] = useState<any[]>([])
   const [scanning, setScanning] = useState(false)
+  const [showPresetLibrary, setShowPresetLibrary] = useState(false)
+  const [presetLibraryPresets, setPresetLibraryPresets] = useState<any[]>([])
+  const [presetLibraryLoading, setPresetLibraryLoading] = useState(false)
+  const [presetFilterCategory, setPresetFilterCategory] = useState<string>('all')
+  const [presetSearchQuery, setPresetSearchQuery] = useState('')
+
+  const loadPresetLibrary = async () => {
+    setPresetLibraryLoading(true)
+    try {
+      const indexRes = await fetch('/presets/ready/index.json')
+      const indexData = await indexRes.json()
+      const allPresets: any[] = []
+      
+      for (const category in indexData.byCategory) {
+        const presetNames = indexData.byCategory[category]
+        for (const presetName of presetNames) {
+          try {
+            const presetRes = await fetch(`/presets/ready/${presetName}.json`)
+            if (presetRes.ok) {
+              const presetData = await presetRes.json()
+              allPresets.push({
+                id: presetData.id,
+                name: presetData.name,
+                description: presetData.description || '',
+                systemPrompt: presetData.systemPrompt,
+                category: presetData.category?.category || category,
+                categoryRu: presetData.category?.ru || category
+              })
+            }
+          } catch (e) { console.error('Error loading preset:', presetName, e) }
+        }
+      }
+      
+      setPresetLibraryPresets(allPresets)
+      setShowPresetLibrary(true)
+    } catch (e) {
+      console.error('Error loading preset library:', e)
+      showMsg('Ошибка загрузки библиотеки')
+    }
+    setPresetLibraryLoading(false)
+  }
+
+  const addPresetToRole = async (preset: any) => {
+    if (!newRole.llmId) {
+      showMsg('Сначала выберите LLM!')
+      return
+    }
+    
+    const role: Role = {
+      id: Date.now().toString(),
+      name: preset.name,
+      description: preset.description || '',
+      systemPrompt: preset.systemPrompt,
+      llmId: newRole.llmId,
+      knowledgeBases: []
+    }
+    
+    const updated = [...roles, role]
+    setRoles(updated)
+    save('nob_roles', updated)
+    await syncRoleToBackend(role)
+    
+    showMsg(`✓ Роль "${preset.name}" создана`)
+    addLog('ПРЕСЕТ', `Загружен: ${preset.name}`)
+  }
+
+  const categoryColors: Record<string, string> = {
+    product: '#e91e63',
+    design: '#9c27b0',
+    sales: '#2196f3',
+    engineering: '#4caf50',
+    business: '#ff9800',
+    finance: '#00bcd4',
+    research: '#f44336',
+    marketing: '#ffeb3b',
+    legal: '#795548',
+    hr: '#607d8b',
+    cross: '#e91e63',
+    operations: '#3f51b5'
+  }
+
+  const categoryLabels: Record<string, string> = {
+    product: 'Product',
+    design: 'Дизайн',
+    sales: 'Продажи',
+    engineering: 'Инженерия',
+    business: 'Бизнес',
+    finance: 'Финансы',
+    research: 'Исследования',
+    marketing: 'Маркетинг',
+    legal: 'Юристы',
+    hr: 'HR',
+    cross: 'Кросс',
+    operations: 'Операции'
+  }
 
   const addLog = (action: string, details: string) => {
     const entry: LogEntry = { time: getTime(), action, details }
@@ -1139,6 +1234,24 @@ export default function App() {
           <div>
             <h2 style={{ fontFamily: "'Unbounded', sans-serif", fontSize: 16, marginBottom: 14 }}>👥 Роли + Базы знаний</h2>
             
+            {/* Библиотека пресетов */}
+            <div style={{ background: 'rgba(33,185,244,0.1)', border: '1px solid rgba(33,185,244,0.3)', borderRadius: 12, padding: 12, marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div style={{ fontWeight: 600, fontSize: 13, color: '#21b9f4' }}>📂 Библиотека пресетов</div>
+                <div style={{ fontSize: 10, opacity: 0.6, color: '#21b9f4' }}>95 ролей</div>
+              </div>
+              <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 10 }}>
+                Готовые роли из Agency Agents: PM, Дизайнер, Продавец, Инженер и др.
+              </div>
+              <button 
+                onClick={loadPresetLibrary}
+                disabled={presetLibraryLoading}
+                style={{ width: '100%', padding: 10, background: '#21b9f4', border: 'none', borderRadius: 8, color: '#000', fontSize: 12, fontWeight: 600, cursor: presetLibraryLoading ? 'not-allowed' : 'pointer', opacity: presetLibraryLoading ? 0.6 : 1 }}
+              >
+                {presetLibraryLoading ? '⏳ Загрузка...' : '📚 Открыть библиотеку'}
+              </button>
+            </div>
+            
             {/* Панель пресетов */}
             <div style={{ background: 'rgba(156,39,176,0.15)', borderRadius: 12, padding: 12, marginBottom: 16 }}>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
@@ -1187,17 +1300,54 @@ export default function App() {
             </div>
             
             {roles.length > 0 && roles.map(role => (
-              <div key={role.id} style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 14, padding: 14, marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <div style={{ fontWeight: 600 }}>{role.name}</div>
+              editingRole && editingRole.id === role.id ? (
+                // Форма редактирования роли
+                <div key={role.id} style={{ background: 'rgba(33,185,244,0.1)', border: '1px solid rgba(33,185,244,0.3)', borderRadius: 14, padding: 16, marginBottom: 14 }}>
+                  <h3 style={{ fontSize: 14, marginBottom: 12, color: '#21b9f4' }}>✏️ Редактирование: {editingRole.name}</h3>
+                  <div style={{ marginBottom: 10 }}><label style={{ display: 'block', fontSize: 11, opacity: 0.7, marginBottom: 4 }}>Название</label><input value={editingRole.name} onChange={e => setEditingRole({...editingRole, name: e.target.value})} style={{ width: '100%', padding: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#fff', fontSize: 13 }} /></div>
+                  <div style={{ marginBottom: 10 }}><label style={{ display: 'block', fontSize: 11, opacity: 0.7, marginBottom: 4 }}>LLM</label><select value={editingRole.llmId} onChange={e => setEditingRole({...editingRole, llmId: e.target.value})} style={{ width: '100%', padding: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#fff', fontSize: 13 }}><option value="" style={{ color: '#888' }}>Выберите...</option>{llms.map(l => <option key={l.id} value={l.id} style={{ color: '#fff', background: '#003144' }}>{l.name}</option>)}</select></div>
+
+                  {/* Системный промпт */}
+                  <div style={{ marginBottom: 10 }}><label style={{ display: 'block', fontSize: 11, opacity: 0.7, marginBottom: 4, color: '#fff' }}>Системный промпт *</label><textarea value={editingRole.systemPrompt} onChange={e => setEditingRole({...editingRole, systemPrompt: e.target.value})} rows={3} placeholder="Инструкции для AI..." style={{ width: '100%', padding: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#fff', fontSize: 13, resize: 'none' }} /></div>
+                  <input type="file" onChange={(e) => handlePromptFileUpload(e, 'edit')} accept=".md,.txt" style={{ display: 'none' }} id="edit-prompt-file" />
+                  <button onClick={() => document.getElementById('edit-prompt-file')?.click()} style={{ width: '100%', padding: 10, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, color: '#fff', fontSize: 12, cursor: 'pointer', marginBottom: 6 }}>📄 Загрузить промпт из файла</button>
+                  {editingRole.systemPromptFile && <div style={{ fontSize: 10, color: '#3ddb7f', marginBottom: 10 }}>✓ {editingRole.systemPromptFile}</div>}
+
+                  {/* Базы знаний */}
+                  <div style={{ marginBottom: 10 }}><label style={{ display: 'block', fontSize: 11, opacity: 0.7, marginBottom: 4, color: '#21b9f4' }}>База данных</label>
+                    {editingRole.knowledgeBases.map(kb => (
+                      <div key={kb.id} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 6, padding: 8, marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div><span style={{ fontSize: 11 }}>{kb.type === 'file' ? '📄' : '🔗'}</span> <span style={{ fontSize: 11 }}>{kb.name}</span></div>
+                        <button onClick={() => deleteKnowledgeBase('edit', editingRole.id, kb.id)} style={{ background: 'none', border: 'none', color: '#f44336', cursor: 'pointer', fontSize: 10 }}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                  <input type="file" multiple onChange={(e) => handleKnowledgeFileUpload(e, 'edit')} accept=".md,.txt,.json,.pdf" style={{ display: 'none' }} id="edit-kb-files" />
+                  <button onClick={() => document.getElementById('edit-kb-files')?.click()} style={{ width: '100%', padding: 10, background: 'rgba(33,185,244,0.15)', border: '1px solid rgba(33,185,244,0.3)', borderRadius: 8, color: '#21b9f4', fontSize: 12, cursor: 'pointer', marginBottom: 6 }}>📚 Загрузить БД из файла (можно несколько)</button>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <button onClick={() => setEditingRole(role)} style={{ background: 'none', border: 'none', color: '#21b9f4', cursor: 'pointer', fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid #21b9f4' }}>✏️</button>
-                    <button onClick={() => deleteRole(role.id)} style={{ background: 'none', border: 'none', color: '#f44336', cursor: 'pointer', fontSize: 12 }}>✕</button>
+                    <input id="edit-kb-url" placeholder="URL (Google Drive...)" style={{ flex: 1, padding: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#fff', fontSize: 12 }} />
+                    <button onClick={() => addKnowledgeBaseByUrl('edit', editingRole.id, document.getElementById('edit-kb-url') as HTMLInputElement)} style={{ padding: '10px 14px', background: '#3ddb7f', border: 'none', borderRadius: 8, color: '#000', fontSize: 12, cursor: 'pointer' }}>→</button>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                    <button onClick={updateRole} style={{ flex: 1, padding: 10, background: '#21b9f4', border: 'none', borderRadius: 8, color: '#000', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Сохранить</button>
+                    <button onClick={() => setEditingRole(null)} style={{ flex: 1, padding: 10, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, cursor: 'pointer' }}>Отмена</button>
                   </div>
                 </div>
-                <div style={{ fontSize: 11, opacity: 0.6, marginBottom: 4 }}>LLM: {llms.find(l => l.id === role.llmId)?.name}</div>
-                <div style={{ fontSize: 10, opacity: 0.5 }}>Базы знаний: {role.knowledgeBases.length}</div>
-              </div>
+              ) : (
+                // Оригинальная строка роли
+                <div key={role.id} style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 14, padding: 14, marginBottom: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <div style={{ fontWeight: 600 }}>{role.name}</div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button onClick={() => setEditingRole(role)} style={{ background: 'none', border: 'none', color: '#21b9f4', cursor: 'pointer', fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid #21b9f4' }}>✏️</button>
+                      <button onClick={() => deleteRole(role.id)} style={{ background: 'none', border: 'none', color: '#f44336', cursor: 'pointer', fontSize: 12 }}>✕</button>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 11, opacity: 0.6, marginBottom: 4 }}>LLM: {llms.find(l => l.id === role.llmId)?.name}</div>
+                  <div style={{ fontSize: 10, opacity: 0.5 }}>Базы знаний: {role.knowledgeBases.length}</div>
+                </div>
+              )
             ))}
 
             {/* 🔍 Поиск по файлам */}
@@ -1319,42 +1469,7 @@ export default function App() {
               <div style={{ fontSize: 10, opacity: 0.5, marginTop: 8 }}>Всего файлов: {knowledgeBases.length} | Активных: {Object.values(kbEnabled).filter(v => v !== false).length}</div>
             </div>
 
-            {/* Редактирование */}
-            {editingRole && (
-              <div style={{ background: 'rgba(33,185,244,0.1)', border: '1px solid rgba(33,185,244,0.3)', borderRadius: 14, padding: 16, marginBottom: 14 }}>
-                <h3 style={{ fontSize: 14, marginBottom: 12, color: '#21b9f4' }}>✏️ Редактирование: {editingRole.name}</h3>
-                <div style={{ marginBottom: 10 }}><label style={{ display: 'block', fontSize: 11, opacity: 0.7, marginBottom: 4 }}>Название</label><input value={editingRole.name} onChange={e => setEditingRole({...editingRole, name: e.target.value})} style={{ width: '100%', padding: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#fff', fontSize: 13 }} /></div>
-                <div style={{ marginBottom: 10 }}><label style={{ display: 'block', fontSize: 11, opacity: 0.7, marginBottom: 4 }}>LLM</label><select value={editingRole.llmId} onChange={e => setEditingRole({...editingRole, llmId: e.target.value})} style={{ width: '100%', padding: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#fff', fontSize: 13 }}><option value="" style={{ color: '#888' }}>Выберите...</option>{llms.map(l => <option key={l.id} value={l.id} style={{ color: '#fff', background: '#003144' }}>{l.name}</option>)}</select></div>
-                
-                {/* Системный промпт */}
-                <div style={{ marginBottom: 10 }}><label style={{ display: 'block', fontSize: 11, opacity: 0.7, marginBottom: 4, color: '#fff' }}>Системный промпт *</label><textarea value={editingRole.systemPrompt} onChange={e => setEditingRole({...editingRole, systemPrompt: e.target.value})} rows={3} placeholder="Инструкции для AI..." style={{ width: '100%', padding: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#fff', fontSize: 13, resize: 'none' }} /></div>
-                <input type="file" onChange={(e) => handlePromptFileUpload(e, 'edit')} accept=".md,.txt" style={{ display: 'none' }} id="edit-prompt-file" />
-                <button onClick={() => document.getElementById('edit-prompt-file')?.click()} style={{ width: '100%', padding: 10, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, color: '#fff', fontSize: 12, cursor: 'pointer', marginBottom: 6 }}>📄 Загрузить промпт из файла</button>
-                {editingRole.systemPromptFile && <div style={{ fontSize: 10, color: '#3ddb7f', marginBottom: 10 }}>✓ {editingRole.systemPromptFile}</div>}
-                
-                {/* Базы знаний */}
-                <div style={{ marginBottom: 10 }}><label style={{ display: 'block', fontSize: 11, opacity: 0.7, marginBottom: 4, color: '#21b9f4' }}>База данных</label>
-                  {editingRole.knowledgeBases.map(kb => (
-                    <div key={kb.id} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 6, padding: 8, marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div><span style={{ fontSize: 11 }}>{kb.type === 'file' ? '📄' : '🔗'}</span> <span style={{ fontSize: 11 }}>{kb.name}</span></div>
-                      <button onClick={() => deleteKnowledgeBase('edit', editingRole.id, kb.id)} style={{ background: 'none', border: 'none', color: '#f44336', cursor: 'pointer', fontSize: 10 }}>✕</button>
-                    </div>
-                  ))}
-                </div>
-                <input type="file" multiple onChange={(e) => handleKnowledgeFileUpload(e, 'edit')} accept=".md,.txt,.json,.pdf" style={{ display: 'none' }} id="edit-kb-files" />
-                <button onClick={() => document.getElementById('edit-kb-files')?.click()} style={{ width: '100%', padding: 10, background: 'rgba(33,185,244,0.15)', border: '1px solid rgba(33,185,244,0.3)', borderRadius: 8, color: '#21b9f4', fontSize: 12, cursor: 'pointer', marginBottom: 6 }}>📚 Загрузить БД из файла (можно несколько)</button>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <input id="edit-kb-url" placeholder="URL (Google Drive...)" style={{ flex: 1, padding: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#fff', fontSize: 12 }} />
-                  <button onClick={() => addKnowledgeBaseByUrl('edit', editingRole.id, document.getElementById('edit-kb-url') as HTMLInputElement)} style={{ padding: '10px 14px', background: '#3ddb7f', border: 'none', borderRadius: 8, color: '#000', fontSize: 12, cursor: 'pointer' }}>→</button>
-                </div>
-                
-                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                  <button onClick={updateRole} style={{ flex: 1, padding: 10, background: '#21b9f4', border: 'none', borderRadius: 8, color: '#000', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Сохранить</button>
-                  <button onClick={() => setEditingRole(null)} style={{ flex: 1, padding: 10, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, cursor: 'pointer' }}>Отмена</button>
-                </div>
-              </div>
-            )}
-
+            
             {/* Новая роль */}
             {!showAddRoleForm ? (
               <button onClick={() => setShowAddRoleForm(true)} style={{ width: '100%', padding: 14, background: 'rgba(61,219,127,0.15)', border: '1px solid rgba(61,219,127,0.3)', borderRadius: 12, color: '#3ddb7f', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginBottom: 10 }}>+ Добавить роль</button>
@@ -1393,6 +1508,64 @@ export default function App() {
             <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
               <button onClick={prev} style={{ flex: 1, padding: 14, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 12, color: '#fff', fontSize: 14, cursor: 'pointer' }}>← Назад</button>
               <button onClick={next} style={{ flex: 1, padding: 14, background: '#3ddb7f', border: 'none', borderRadius: 12, color: '#000', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Далее →</button>
+            </div>
+          </div>
+        )}
+
+        {/* Модалка библиотеки пресетов */}
+        {showPresetLibrary && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.9)', zIndex: 9999, padding: 20, overflow: 'auto' }}>
+            <div style={{ background: '#021c28', borderRadius: 16, padding: 16, maxWidth: 600, margin: '0 auto', border: '1px solid rgba(33,185,244,0.3)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h2 style={{ fontSize: 16, margin: 0, color: '#21b9f4' }}>📂 Библиотека пресетов</h2>
+                <button onClick={() => setShowPresetLibrary(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer' }}>✕</button>
+              </div>
+              
+              {/* Поиск и фильтр */}
+              <div style={{ marginBottom: 12 }}>
+                <input 
+                  value={presetSearchQuery}
+                  onChange={e => setPresetSearchQuery(e.target.value)}
+                  placeholder="Поиск по названию..."
+                  style={{ width: '100%', padding: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#fff', fontSize: 13, marginBottom: 8 }}
+                />
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  <button onClick={() => setPresetFilterCategory('all')} style={{ padding: '4px 10px', background: presetFilterCategory === 'all' ? '#21b9f4' : 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 12, color: presetFilterCategory === 'all' ? '#000' : '#fff', fontSize: 10, cursor: 'pointer' }}>Все</button>
+                  {['product', 'design', 'sales', 'engineering', 'hr', 'marketing', 'finance', 'legal', 'operations'].map(cat => (
+                    <button key={cat} onClick={() => setPresetFilterCategory(cat)} style={{ padding: '4px 10px', background: presetFilterCategory === cat ? categoryColors[cat] || '#21b9f4' : 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 12, color: presetFilterCategory === cat ? '#000' : '#fff', fontSize: 10, cursor: 'pointer' }}>{categoryLabels[cat] || cat}</button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Список пресетов */}
+              <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                {presetLibraryPresets
+                  .filter(p => (presetFilterCategory === 'all' || p.category === presetFilterCategory) && (!presetSearchQuery || p.name?.toLowerCase().includes(presetSearchQuery.toLowerCase())))
+                  .slice(0, 50)
+                  .map((preset) => (
+                    <div key={preset.id} style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 10, padding: 12, marginBottom: 8, borderLeft: `3px solid ${categoryColors[preset.category] || '#21b9f4'}` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: '#fff' }}>{preset.name}</div>
+                        <span style={{ fontSize: 9, background: categoryColors[preset.category] || '#21b9f4', color: '#000', padding: '2px 6px', borderRadius: 8 }}>{categoryLabels[preset.category] || preset.category}</span>
+                      </div>
+                      <div style={{ fontSize: 10, opacity: 0.6, marginBottom: 8, color: 'rgba(255,255,255,0.7)' }}>{preset.description?.substring(0, 100)}</div>
+                      <button 
+                        onClick={() => { addPresetToRole(preset); setShowPresetLibrary(false) }}
+                        disabled={!newRole.llmId}
+                        style={{ width: '100%', padding: 8, background: newRole.llmId ? '#3ddb7f' : 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 6, color: newRole.llmId ? '#000' : '#666', fontSize: 11, fontWeight: 600, cursor: newRole.llmId ? 'pointer' : 'not-allowed' }}
+                      >
+                        {newRole.llmId ? '➕ Добавить роль' : 'Сначала выберите LLM'}
+                      </button>
+                    </div>
+                  ))}
+                {presetLibraryPresets.filter(p => (presetFilterCategory === 'all' || p.category === presetFilterCategory) && (!presetSearchQuery || p.name?.toLowerCase().includes(presetSearchQuery.toLowerCase()))).length === 0 && (
+                  <div style={{ textAlign: 'center', padding: 20, opacity: 0.5, fontSize: 12 }}>Нет пресетов</div>
+                )}
+              </div>
+              
+              <div style={{ fontSize: 10, opacity: 0.5, marginTop: 12, textAlign: 'center' }}>
+                Показано из {presetLibraryPresets.length} пресетов
+              </div>
             </div>
           </div>
         )}

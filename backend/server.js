@@ -51,6 +51,7 @@ function getEndpoint(llmType, llmEndpoint) {
 // Импорт модулей оркестрации (могут быть отключены)
 import { setRoles, setDocuments, delegate } from './delegate.js';
 import { orchestrate } from './orchestrate.js';
+import { getPresetManager } from './preset-manager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -67,7 +68,11 @@ let roles = [];
 let knowledgeBases = [];
 let documents = [];
 let conversationHistory = [];
-let orchestrationEnabled = false;
+let orchestrationEnabled = true;
+
+// ==================== МЕНЕДЖЕР ПРЕСЕТОВ ====================
+const presetManager = getPresetManager();
+let currentPresetId = 'default';
 
 // ==================== ИСТОРИЯ ЧАТА С ДИСКОМ ====================
 const HISTORY_FILE = join(__dirname, 'data', 'conversation-history.json');
@@ -461,10 +466,16 @@ app.post('/api/chat', async (req, res) => {
   }
   
   // Ищем LLM по имени (т.к. ID могут не совпадать между фронтендом и бэкендом)
-  const llm = llms.find(l => l.name === role.llmName);
+  let llm = llms.find(l => l.name === role.llmName);
+  
+  // Fallback: если LLM не найден, используем первый доступный
   if (!llm) {
-    // Пробуем найти по любому LLM если имя не найдено
-    return res.status(404).json({ error: `LLM не найден: ${role.llmName}` });
+    if (llms.length > 0) {
+      console.log(`[CHAT] LLM '${role.llmName}' не найден, использую первый: ${llms[0].name}`);
+      llm = llms[0];
+    } else {
+      return res.status(404).json({ error: 'Нет доступных LLM' });
+    }
   }
   
   // Поиск релевантных документов
@@ -806,7 +817,22 @@ async function callUncloseAI(endpoint, messages) {
 // ==================== LLM WRAPPER ====================
 
 async function callLLM(llmName, messages) {
-  const llm = llms.find(l => l.name === llmName);
+  console.log(`[CALL LLM] Поиск LLM: ${llmName}, всего LLM: ${llms.length}`);
+  let llm = llms.find(l => l.name === llmName);
+  // Fallback: если LLM не найден, используем первый доступный
+  if (!llm) {
+    if (llms.length > 0) {
+      console.log(`[CALL LLM] LLM '${llmName}' не найден, использую первый доступный: ${llms[0].name}`);
+      llm = llms[0];
+      llmName = llm.name;
+    } else {
+      throw new Error(`LLM не найден: ${llmName} (нет доступных LLM)`);
+    }
+  }
+  if (!llm && llmName === 'unknown' && llms.length > 0) {
+    console.log(`[CALL LLM] LLM 'unknown' не найден, использую первый доступный: ${llms[0].name}`);
+    llm = llms[0];
+  }
   if (!llm) {
     throw new Error(`LLM не найден: ${llmName}`);
   }
@@ -832,9 +858,16 @@ async function callLLM(llmName, messages) {
  * Новая версия callLLM с использованием адаптеров и кэша
  */
 async function callLLMNew(llmName, messages) {
-  const llm = llms.find(l => l.name === llmName);
+  let llm = llms.find(l => l.name === llmName);
+  // Fallback: если LLM не найден, используем первый доступный
   if (!llm) {
-    throw new Error(`LLM не найден: ${llmName}`);
+    if (llms.length > 0) {
+      console.log(`[CALL LLM] LLM '${llmName}' не найден, использую первый доступный: ${llms[0].name}`);
+      llm = llms[0];
+      llmName = llm.name;
+    } else {
+      throw new Error(`LLM не найден: ${llmName} (нет доступных LLM)`);
+    }
   }
 
   // Получаем фабрику адаптеров и кэш
@@ -985,6 +1018,131 @@ app.post('/api/orchestration/disable', (req, res) => {
   res.json({ enabled: false });
 });
 
+// ==================== API: УПРАВЛЕНИЕ ПРЕСЕТАМИ ====================
+
+app.get('/api/presets', async (req, res) => {
+  try {
+    const activePresets = presetManager.getActivePresets();
+    res.json({
+      currentPresetId,
+      activePresets,
+      maxActivePresets: presetManager.maxActivePresets
+    });
+  } catch (error) {
+    console.error('[API] Ошибка получения пресетов:', error);
+    res.status(500).json({ error: 'Ошибка получения списка пресетов' });
+  }
+});
+
+app.post('/api/presets/load', async (req, res) => {
+  const { presetId } = req.body;
+  if (!presetId) {
+    return res.status(400).json({ error: 'Не указан presetId' });
+  }
+
+  try {
+    const preset = await presetManager.loadPreset(presetId);
+    if (preset) {
+      currentPresetId = presetId;
+      res.json({
+        success: true,
+        presetId,
+        message: `Пресет ${presetId} загружен в память`
+      });
+    } else {
+      res.status(500).json({ error: `Не удалось загрузить пресет ${presetId}` });
+    }
+  } catch (error) {
+    console.error(`[API] Ошибка загрузки пресета ${presetId}:`, error);
+    res.status(500).json({ error: `Ошибка загрузки пресета: ${error.message}` });
+  }
+});
+
+app.post('/api/presets/unload', async (req, res) => {
+  const { presetId } = req.body;
+  if (!presetId) {
+    return res.status(400).json({ error: 'Не указан presetId' });
+  }
+
+  try {
+    const success = await presetManager.unloadPreset(presetId);
+    if (success) {
+      if (currentPresetId === presetId) {
+        currentPresetId = 'default';
+      }
+      res.json({
+        success: true,
+        presetId,
+        message: `Пресет ${presetId} выгружен из памяти`
+      });
+    } else {
+      res.status(500).json({ error: `Не удалось выгрузить пресет ${presetId}` });
+    }
+  } catch (error) {
+    console.error(`[API] Ошибка выгрузки пресета ${presetId}:`, error);
+    res.status(500).json({ error: `Ошибка выгрузки пресета: ${error.message}` });
+  }
+});
+
+app.get('/api/presets/:presetId/data/:dataType', async (req, res) => {
+  const { presetId, dataType } = req.params;
+
+  try {
+    const data = await presetManager.getPresetData(presetId, dataType);
+    if (data !== null) {
+      res.json(data);
+    } else {
+      res.status(404).json({ error: `Данные типа ${dataType} не найдены в пресете ${presetId}` });
+    }
+  } catch (error) {
+    console.error(`[API] Ошибка получения данных пресета ${presetId}/${dataType}:`, error);
+    res.status(500).json({ error: `Ошибка получения данных: ${error.message}` });
+  }
+});
+
+app.post('/api/presets/:presetId/data/:dataType', async (req, res) => {
+  const { presetId, dataType } = req.params;
+  const data = req.body;
+
+  try {
+    const success = await presetManager.savePresetData(presetId, dataType, data);
+    if (success) {
+      res.json({ success: true, message: `Данные сохранены в пресет ${presetId}` });
+    } else {
+      res.status(500).json({ error: `Не удалось сохранить данные в пресет ${presetId}` });
+    }
+  } catch (error) {
+    console.error(`[API] Ошибка сохранения данных пресета ${presetId}/${dataType}:`, error);
+    res.status(500).json({ error: `Ошибка сохранения данных: ${error.message}` });
+  }
+});
+
+app.post('/api/presets/switch', async (req, res) => {
+  const { presetId } = req.body;
+  if (!presetId) {
+    return res.status(400).json({ error: 'Не указан presetId' });
+  }
+
+  try {
+    // Загружаем новый пресет
+    const preset = await presetManager.loadPreset(presetId);
+    if (preset) {
+      currentPresetId = presetId;
+      res.json({
+        success: true,
+        presetId,
+        message: `Переключено на пресет ${presetId}`,
+        presetInfo: presetManager.getActivePresets().find(p => p.presetId === presetId)
+      });
+    } else {
+      res.status(500).json({ error: `Не удалось переключиться на пресет ${presetId}` });
+    }
+  } catch (error) {
+    console.error(`[API] Ошибка переключения пресета ${presetId}:`, error);
+    res.status(500).json({ error: `Ошибка переключения пресета: ${error.message}` });
+  }
+});
+
 app.post('/api/delegate', async (req, res) => {
   if (!orchestrationEnabled) {
     return res.status(403).json({ error: 'Оркестрация выключена. Включите её в настройках.' });
@@ -1054,6 +1212,15 @@ function loadData() {
     if (fs.existsSync(rolesFile)) {
       roles = JSON.parse(fs.readFileSync(rolesFile, 'utf-8'));
       console.log(`[ЗАГРУЗКА] Роли: ${roles.length}`);
+      // Обогащаем роли именами LLM
+      if (llms.length) {
+        const llmMap = new Map(llms.map(llm => [llm.id, llm.name]));
+        roles = roles.map(role => {
+          const llmName = llmMap.get(role.llmId) || role.llmName || 'unknown';
+          return { ...role, llmName };
+        });
+        console.log('[ЗАГРУЗКА] Роли обогащены llmName');
+      }
     }
     
     if (fs.existsSync(kbsFile)) {
@@ -1089,21 +1256,19 @@ setInterval(saveData, 30000);
 
 loadData();
 
-// Запускаем сервер только если файл запущен напрямую, а не импортирован
-if (import.meta.url === `file://${process.argv[1]}`) {
-  app.listen(PORT, () => {
-    console.log(`\n🚀 NeuroOffice Backend запущен на http://localhost:${PORT}`);
-    console.log(`📊 LLM: ${llms.length} | Роли: ${roles.length} | Базы: ${knowledgeBases.length}`);
-    console.log(`\nAPI Endpoints:`);
-    console.log(`  GET  /api/status    - Статус системы`);
-    console.log(`  GET  /api/llms     - Список LLM`);
-    console.log(`  POST /api/llms     - Добавить LLM`);
-    console.log(`  GET  /api/roles    - Список ролей`);
-    console.log(`  POST /api/roles   - Создать роль`);
-    console.log(`  POST /api/chat    - Отправить сообщение`);
-    console.log(`  POST /api/rag/search - Поиск по документам\n`);
-  });
-}
+// Запускаем сервер всегда
+app.listen(PORT, () => {
+  console.log(`\n🚀 NeuroOffice Backend запущен на http://localhost:${PORT}`);
+  console.log(`📊 LLM: ${llms.length} | Роли: ${roles.length} | Базы: ${knowledgeBases.length}`);
+  console.log(`\nAPI Endpoints:`);
+  console.log(`  GET  /api/status    - Статус системы`);
+  console.log(`  GET  /api/llms     - Список LLM`);
+  console.log(`  POST /api/llms     - Добавить LLM`);
+  console.log(`  GET  /api/roles    - Список ролей`);
+  console.log(`  POST /api/roles   - Создать роль`);
+  console.log(`  POST /api/chat    - Отправить сообщение`);
+  console.log(`  POST /api/rag/search - Поиск по документам\n`);
+});
 
 // Экспорт функций для тестирования
 export { parseFile, parseFileFromContent, scanFolder, searchDocuments, rebuildSearchIndex };
